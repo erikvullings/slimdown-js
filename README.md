@@ -1,6 +1,6 @@
 # slimdown-js
 
-A very basic regex-based Markdown parser based on the gist by [Johnny Broadway](https://gist.github.com/jbroadway/2836900), converted from PHP to TypeScript, extended with several additional elements (images, tables, code blocks) and published to `npm`.
+A basic regex-based Markdown parser based on the gist by [Johnny Broadway](https://gist.github.com/jbroadway/2836900), converted from PHP to TypeScript, extended with several additional elements (images, tables, code blocks) and published to `npm`.
 
 Inspired by:
 
@@ -24,9 +24,15 @@ Supports the following elements (and can be extended via
 - Tables
 - Ordered/unordered lists (one level deep only)
 
+## Size
+
+The main reason for using this library, which hasn't been extensively tested and is not completely compatible with the spec, is to have something small. Version 0.1.0's size is 2.614 bytes, uncompressed, and 1.267 bytes using gzip compression.
+
+For more advanced scenario's, however, I can recommend [marked](https://github.com/markedjs/marked), albeit at a bigger size: marked.min.js is 23.372 bytes uncompressed, and 7.684 bytes using gzip.
+
 ## Playground
 
-Head over to [flems.io](https://flems.io) for a [live example](https://flems.io/#0=N4IgtglgJlA2CmIBcAWAnAOjQZgDQgGd4EBjAF3imRAoLIzIJHwDMIEmkBtUAOwEMwiJDXh0GTfCQD2vCnOozedAAQBlWBDBRpAd14qAvCoKbte3hg1ad+gNwAdXk6WrtRlQAMAxCoAqEGQITk4AgrxQKgBUvHpRKlz8Kpq8ANYAugAUABZkZAAOSAD0RbplGADm0tIVCBgyYACUKmTS0VEs0rCwcfH8EQn90mTZ8ABOWbkFxUUAnvzZ1fXSYEWNGCG88QDyvPBO8X660gf+2WPw+7wAtCoAYtIArmNOt3cQAG5XTt6+ao8AI1G-Cgm128HaZGOUXiIwuEJhHSeY0RKjYXw2zl44JUAH1cVDpPiWudLnjOs9cWjPhD8QQIAAPYlEL4GXHwCAVXK4zFOACMGBU4KcACZBUcTrxsOLSd9eL9-PwAQgVPAGYJ8sEsQAfRXKsQqQ1Gw260IXY0Wk0qADC1VgJqc2uuzpdrrd2qQbq9zqQTrdvsdKhk9uwKggBEturGnNy134mgqe0iuoAJHyAGwABkzKm1geDKhFYYjFt1JHgcnGlEjRrTRbzvF1AC94ACxkk6NH8gbdfxzXt+GQa7W+bnNgBZaTmigMoe6QLZFQOByeCC8FLwTIpmRQeCNZeeEwauqbAB8KlCKmV0hIqRUAEdHsMruf+CQxtICBHCck12Jebwk7Tmq9AYBgniOFiYAYBcETjJkOgkI8QhyBgALSFAsy4CoYCZAA5FAnx4dh0FkGMjx0Jk1jmPoMEVruYyZNojQsY0djMIQxDwOQECyJwICZkgmbXNgADsSDpigIAAL7pPgKSpJwPAgAIQjUJAcLsBxzywNQUz5AQMyPLw+SpBUyyrBp5zsAAAgKArpkUVnRrAGAAFaSDQszdtQBDvhA+RkDJuB8IIwiEGYtg3B5NmwIOYhBfgOl6XkBlGSZZkWUUpg2BY1wxZmGCFdgRSaAC2WRRY7meWQ3nhX5XZBbJ0lAA).
+Head over to [flems.io](https://flems.io) for a [live example](https://flems.io/#0=N4IgtglgJlA2CmIBcAWAnAOjQZgDQgGd4EBjAF3imRAoLIzIJHwDMIEmkBtUAOwEMwiJDXh0GTfCQD2vCnOozedAAQBlWBDBRpAd14qAvCoKbte3hg1ad+gNwAdXk6WrtRlQAMAxCoAqEGQITk4AgrxQKgBUvHpRKlz8Kpq8ANYAugAUABZkZAAOSAD0RbplGADm0tIVCBgyYACUKmTS0VEs0rCwcfH8EQn90mTZ8ABOWbkFxUUAnvzZ1fXSYEWNGCG88QDyvPBO8X660gf+2WPw+7wAtCoAYtIArmNOt3cQAG5XTt6+ao8AI1G-Cgm128HaZGOUXiIwuEJhHSeY0RKjYXw2zl44JUAH1cVDpPiWudLnjOs9cWjPhD8QQIAAPYlEL4GXHwCAVXK4zFOACMGBU4KcACZBUcTrxsOLSd9eL9-PwAQgVPAGYJ8sEsQAfRXKsQqQ1Gw260IXY0Wk0qADC1VgJqc2uuzpdrrd2qQbq9zqQTrdvsdKhk9uwKggBEturGnNy134mgqe0iuoAJHyAGwABkzKm1geDKhFYYjFt1JHgcnGlEjRrTRbzvF1AC94ACxkk6NH8gbdfxzXt+GQa7W+bnNgBZaTmigMoe6QLZFQOByeCC8FLwTIpmRQeCNZeeEwauqbAB8KlCKmV0hIqRUAEdHsMruf+CQxtICBHCck12Jebwk7Tmq9AYBgniOFiYAYBcETjJkOgkI8QhyBgALSFAsy4CoYCZAA5FAnx4dh0FkGMjx0Jk1jmPoMEVruYyZNojQsY0djMIQxDwOQECyJwICZkgmbXNgADsSDpigIAAL7pPgKSpJwPAgAIQjUJAcLsBxzywNQUz5AQMyPLw+SpBUyyrBp5zsAAAgKArpkUVnRrAGAAFaSDQszdtQBDvhA+RkDJuB8IIwiEGYtg3B5NmZhgAqZtpYy6SI+mGSUxmmeZDRFKYNgWNcMVxQlRSaACuWRRY7meWQ3nhX5XZBbJ0lAA).
 
 ## Usage
 
