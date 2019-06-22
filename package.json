@@ -1,6 +1,6 @@
 {
   "name": "slimdown-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "lib/slimdown.js",
   "description": "A very basic regex-based Markdown parser.",
   "repository": {
@@ -42,12 +42,12 @@
     "rollup-plugin-typescript2": "^0.21.2"
   },
   "ava": {
-		"compileEnhancements": false,
-		"extensions": [
-			"ts"
-		],
-		"require": [
-			"ts-node/register"
-		]
-	}
+    "compileEnhancements": false,
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ]
+  }
 }
