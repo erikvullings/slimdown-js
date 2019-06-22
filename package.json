@@ -1,7 +1,7 @@
 {
   "name": "slimdown-js",
   "version": "0.0.1",
-  "main": "slimdown",
+  "main": "lib/slimdown.js",
   "description": "A very basic regex-based Markdown parser.",
   "repository": {
     "type": "git",
@@ -23,9 +23,8 @@
   "scripts": {
     "test": "ava --watch",
     "clean": "rimraf .rpt2_cache && rimraf dist",
-    "link": "npm link",
     "build": "rollup -c",
-    "start": "rollup -c -w",
+    "start": "tsc -w",
     "dry-run": "npm publish --dry-run",
     "patch-release": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
     "minor-release": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",

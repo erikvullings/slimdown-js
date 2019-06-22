@@ -9,3 +9,4 @@ shrinkwrap.yaml
 pnpm-lock.yaml
 .rpt2_cache
 rollup.config.js
+dist

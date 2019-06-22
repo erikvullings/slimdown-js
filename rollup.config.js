@@ -13,7 +13,7 @@ export default {
   output: [
     {
       name: 'slimdown',
-      file: './dist/' + pkg.main,
+      file: pkg.main,
       format: 'iife',
       sourcemap: true,
     },
@@ -26,6 +26,7 @@ export default {
     // Compile TypeScript files
     typescript({
       rollupCommonJSResolveHack: true,
+      tsconfigOverride: { compilerOptions: { module: 'esnext' } },
       typescript: require('typescript'),
     }),
     // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
