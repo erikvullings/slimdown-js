@@ -33,7 +33,7 @@ Pay what you want for Music
 test('parsing longer text', t => {
   const md = `# Title
 
-And *now* [a link](http://www.google.com) to **follow** and [another](http://yahoo.com/).
+To use **Slimdown**, grap it from [npm](https://www.npmjs.com/package/slimdown-js) or *fork* the project on [GitHub](https://github.com/erikvullings/slimdown-js).
 
 * One
 * Two
@@ -58,7 +58,7 @@ More text...`;
   const expected = `<h1>Title</h1>
 
 <p>
-And <em>now</em> <a href='http://www.google.com'>a link</a> to <strong>follow</strong> and <a href='http://yahoo.com/'>another</a>.
+To use <strong>Slimdown</strong>, grap it from <a href='https://www.npmjs.com/package/slimdown-js'>npm</a> or <em>fork</em> the project on <a href='https://github.com/erikvullings/slimdown-js'>GitHub</a>.
 </p>
 <ul>
   <li>One</li>

@@ -68,7 +68,7 @@ export class Slimdown {
     [/\s?<\/ul>\s?<ul>/g, ''], // fix extra ul
     [/\s?<\/ol>\s?<ol>/g, ''], // fix extra ol
     [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
-    [/<a.*<\/a>/g, Slimdown.cleanUpUrl], // fix em in links
+    [/https?:\/\/[^"']*/g, Slimdown.cleanUpUrl], // fix em in links
   ] as Array<[RegExp, RegexReplacer | string]>;
 
   private static esc(s: string) {
