@@ -36,11 +36,7 @@ export class Slimdown {
   public static render(text: string) {
     text = `\n${text}\n`;
     this.rules.forEach(([regex, subst]) => {
-      if (typeof subst === 'string') {
-        text = text.replace(regex, subst);
-      } else {
-        text = text.replace(regex, subst);
-      }
+      text = text.replace(regex, subst as any);
     });
     return text.trim();
   }
@@ -55,8 +51,8 @@ export class Slimdown {
   private static rules = [
     [/\r\n/g, '\n'], // Remove \r
     [/\n(#+)(.*)/g, Slimdown.header], // headers
-    [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, "<img src='$2' alt='$1'>"], // images, invoked before links
-    [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, "<a href='$2'>$1</a>"], // links
+    [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src=\'$2\' alt=\'$1\'>'], // images, invoked before links
+    [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href=\'$2\'>$1</a>'], // links
     [/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'], // bold
     [/(\*|_)(.*?)\1/g, '<em>$2</em>'], // emphasis
     [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
@@ -109,12 +105,7 @@ export class Slimdown {
       .map(col => (/:-+:/g.test(col) ? 'center' : /-+:/g.test(col) ? 'right' : /:-+/.test(col) ? 'left' : ''));
     const td = (col: number) => {
       const a = align[col];
-      switch (a) {
-        case 'left': return ' align="left"';
-        case 'right': return ' align="right"';
-        case 'center': return ' align="center"';
-        default: return '';
-      }
+      return a ? ` align="${a}"` : '';
     };
     const h = `<tr>${headers
       .split('|')
