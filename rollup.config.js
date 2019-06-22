@@ -26,7 +26,7 @@ export default {
     // Compile TypeScript files
     typescript({
       rollupCommonJSResolveHack: true,
-      tsconfigOverride: { compilerOptions: { module: 'esnext' } },
+      tsconfigOverride: { compilerOptions: { module: 'ES2015' } },
       typescript: require('typescript'),
     }),
     // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
