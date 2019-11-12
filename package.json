@@ -23,7 +23,7 @@
   "homepage": "https://github.com/erikvullings/slimdown-js#readme",
   "scripts": {
     "test": "ava --watch",
-    "clean": "rimraf .rpt2_cache && rimraf dist",
+    "clean": "rimraf .rpt2_cache dist lib",
     "build": "rollup -c",
     "start": "tsc -w",
     "dry-run": "npm publish --dry-run",
@@ -32,15 +32,15 @@
     "major-release": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
   },
   "devDependencies": {
-    "ava": "^2.1.0",
-    "rimraf": "^2.6.3",
-    "ts-node": "^8.3.0",
+    "ava": "^2.4.0",
+    "rimraf": "^3.0.0",
+    "ts-node": "^8.5.0",
     "tslib": "^1.10.0",
-    "typescript": "^3.5.2",
-    "rollup": "^1.16.2",
+    "typescript": "^3.7.2",
+    "rollup": "^1.27.0",
     "rollup-plugin-sourcemaps": "^0.4.2",
-    "rollup-plugin-terser": "^5.0.0",
-    "rollup-plugin-typescript2": "^0.21.2"
+    "rollup-plugin-terser": "^5.1.2",
+    "rollup-plugin-typescript2": "^0.25.2"
   },
   "ava": {
     "compileEnhancements": false,

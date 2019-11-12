@@ -87,15 +87,15 @@ export class Slimdown {
   }
 
   private static ulList(_: string, __: string, item = '') {
-    return `<ul>\n\t<li>${Slimdown.esc(item.trim())}</li>\n</ul>`;
+    return `<ul>\n\t<li>${item.trim()}</li>\n</ul>`;
   }
 
   private static olList(_: string, item = '') {
-    return `<ol>\n\t<li>${Slimdown.esc(item.trim())}</li>\n</ol>`;
+    return `<ol>\n\t<li>${item.trim()}</li>\n</ol>`;
   }
 
   private static blockquote(_: string, __: string, item = '') {
-    return `\n<blockquote>${Slimdown.esc(item.trim())}</blockquote>`;
+    return `\n<blockquote>${item.trim()}</blockquote>`;
   }
 
   private static table(_: string, headers: string, format: string, content: string) {

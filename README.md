@@ -64,10 +64,9 @@ import { Slimdown } from 'slimdown-js';
 
 console.log(Slimdown.render(
 
-// TODO
 const mywiki_internal_link = (title: string) => `<a href="${title.replace(/[^a-zA-Z0-9_-]+/g, '_')}">${title}</a>`;
 
-Slimdown.add_rule('/\[\[(.*?)\]\]/e', 'mywiki_internal_link (\'\\1\')');
+Slimdown.add_rule('/\[\[(.*?)\]\]/e', mywiki_internal_link('$1'));
 
 console.log(Slimdown.render ('Check [[This Page]] out!'));
 ```
