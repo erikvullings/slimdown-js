@@ -1,6 +1,6 @@
 {
   "name": "slimdown-js",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "lib/slimdown.js",
   "module": "lib/slimdown.esm.js",
   "description": "A very basic regex-based Markdown parser.",
