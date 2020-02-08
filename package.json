@@ -1,8 +1,9 @@
 {
   "name": "slimdown-js",
-  "version": "0.1.5",
-  "main": "lib/slimdown.js",
-  "module": "lib/slimdown.esm.js",
+  "version": "0.2.0",
+  "main": "dist/slimdown.js",
+  "module": "dist/slimdown.mjs",
+  "typings": "dist/slimdown.d.ts",
   "description": "A very basic regex-based Markdown parser.",
   "repository": {
     "type": "git",
@@ -25,25 +26,24 @@
     "test": "ava --watch",
     "clean": "rimraf .rpt2_cache dist lib",
     "build": "rollup -c",
-    "start": "tsc -w",
+    "start": "rollup -c -w",
     "dry-run": "npm publish --dry-run",
     "patch-release": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
     "minor-release": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
     "major-release": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
   },
   "devDependencies": {
-    "ava": "^2.4.0",
-    "rimraf": "^3.0.0",
-    "ts-node": "^8.5.0",
+    "ava": "^3.2.0",
+    "rimraf": "^3.0.1",
+    "rollup": "^1.31.0",
+    "rollup-plugin-sourcemaps": "^0.5.0",
+    "rollup-plugin-terser": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.25.3",
+    "ts-node": "^8.6.2",
     "tslib": "^1.10.0",
-    "typescript": "^3.7.2",
-    "rollup": "^1.27.0",
-    "rollup-plugin-sourcemaps": "^0.4.2",
-    "rollup-plugin-terser": "^5.1.2",
-    "rollup-plugin-typescript2": "^0.25.2"
+    "typescript": "^3.7.5"
   },
   "ava": {
-    "compileEnhancements": false,
     "extensions": [
       "ts"
     ],

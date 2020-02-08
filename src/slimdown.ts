@@ -29,113 +29,120 @@ export type RegexReplacer = (substring: string, ...args: any[]) => string;
  * Website: https://github.com/erikvullings/slimdown-js
  * License: MIT
  */
-export class Slimdown {
-  /**
-   * Render some Markdown into HTML.
-   */
-  public static render(text: string) {
-    text = `\n${text}\n`;
-    this.rules.forEach(([regex, subst]) => {
-      text = text.replace(regex, subst as any);
-    });
-    return text.trim();
-  }
 
-  /**
-   * Add a rule.
-   */
-  public static addRule(regex: RegExp, replacement: RegexReplacer | string) {
-    Slimdown.rules.push([regex, replacement]);
+const esc = (s: string) => {
+  s = s.replace(/\&/g, '&amp;');
+  const escChars = '\'#<>`*-~_=:"![]()nt';
+  const l = escChars.length;
+  for (let i = 0; i < l; i++) {
+    s = s.replace(
+      RegExp('\\' + escChars[i], 'g'),
+      (m) => `&#${m.charCodeAt(0)};`
+    );
   }
+  return s;
+};
 
-  private static rules = [
-    [/\r\n/g, '\n'], // Remove \r
-    [/\n(#+)(.*)/g, Slimdown.header], // headers
-    [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src=\'$2\' alt=\'$1\'>'], // images, invoked before links
-    [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href=\'$2\'>$1</a>'], // links
-    [/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'], // bold
-    [/(\*|_)(.*?)\1/g, '<em>$2</em>'], // emphasis
-    [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
-    [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
-    [/\n\s*```\n([^]*?)\n\s*```\s*\n/g, '\n<pre>$1</pre>'], // codeblock
-    [/`(.*?)`/g, (_: string, code: string) => `<code>${Slimdown.esc(code)}</code>`], // inline code
-    [/\n(\*|\-|\+)(.*)/g, Slimdown.ulList], // ul lists using +, - or * to denote an entry
-    [/\n[0-9]+\.(.*)/g, Slimdown.olList], // ol lists
-    [/\n(&gt;|\>)(.*)/g, Slimdown.blockquote], // blockquotes
-    [/\n-{5,}/g, '\n<hr />'], // horizontal rule
-    [/(\|[^\n]+\|\r?\n)((?:\|:?[-]+:?)+\|)(\n(?:\|[^\n]+\|\r?\n?)*)?/g, Slimdown.table],
-    [/\n([^\n]+)\n/g, Slimdown.para], // add paragraphs
-    [/\s?<\/ul>\s?<ul>/g, ''], // fix extra ul
-    [/\s?<\/ol>\s?<ol>/g, ''], // fix extra ol
-    [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
-    [/https?:\/\/[^"']*/g, Slimdown.cleanUpUrl], // fix em in links
-  ] as Array<[RegExp, RegexReplacer | string]>;
+const para = (_: string, line: string) => {
+  const trimmed = line.trim();
+  return /^<\/?(ul|ol|li|h|p|bl|table|tr|td)/i.test(trimmed)
+    ? `\n${line}\n`
+    : `\n<p>\n${trimmed}\n</p>\n`;
+};
 
-  private static esc(s: string) {
-    s = s.replace(/\&/g, '&amp;');
-    const escChars = '\'#<>`*-~_=:"![]()nt';
-    const l = escChars.length;
-    for (let i = 0; i < l; i++) {
-      s = s.replace(RegExp('\\' + escChars[i], 'g'), m => `&#${m.charCodeAt(0)};`);
-    }
-    return s;
-  }
+const ulList = (_: string, __: string, item = '') =>
+  `<ul>\n\t<li>${item.trim()}</li>\n</ul>`;
 
-  private static para(_: string, line: string) {
-    const trimmed = line.trim();
-    return /^<\/?(ul|ol|li|h|p|bl|table|tr|td)/i.test(trimmed) ? `\n${line}\n` : `\n<p>\n${trimmed}\n</p>\n`;
-  }
+const olList = (_: string, item = '') =>
+  `<ol>\n\t<li>${item.trim()}</li>\n</ol>`;
 
-  private static ulList(_: string, __: string, item = '') {
-    return `<ul>\n\t<li>${item.trim()}</li>\n</ul>`;
-  }
+const blockquote = (_: string, __: string, item = '') =>
+  `\n<blockquote>${item.trim()}</blockquote>`;
 
-  private static olList(_: string, item = '') {
-    return `<ol>\n\t<li>${item.trim()}</li>\n</ol>`;
-  }
+const table = (_: string, headers: string, format: string, content: string) => {
+  const align = format
+    .split('|')
+    .filter((__, i, arr) => i > 0 && i < arr.length - 1)
+    .map((col) =>
+      /:-+:/g.test(col)
+        ? 'center'
+        : /-+:/g.test(col)
+        ? 'right'
+        : /:-+/.test(col)
+        ? 'left'
+        : ''
+    );
+  const td = (col: number) => {
+    const a = align[col];
+    return a ? ` align="${a}"` : '';
+  };
+  const h = `<tr>${headers
+    .split('|')
+    .map((hd) => hd.trim())
+    .filter((hd) => hd && hd.length)
+    .map((hd, i) => `<th${td(i)}>${hd}</th>`)
+    .join('')}</tr>`;
+  const rows = content
+    .split('\n')
+    .map((row) => row.trim())
+    .filter((row) => row && row.length);
+  const c = rows
+    .map(
+      (row) =>
+        `<tr>${row
+          .split('|')
+          .filter((__, i) => i > 0 && i <= rows.length)
+          .map((cell, i) => `<td${td(i)}>${cell.trim()}</td>`)
+          .join('')}</tr>`
+    )
+    .join('');
+  return `\n<table><tbody>${h}${c}</tbody></table>\n`;
+};
 
-  private static blockquote(_: string, __: string, item = '') {
-    return `\n<blockquote>${item.trim()}</blockquote>`;
-  }
+const cleanUpUrl = (link: string) => link.replace(/<\/?em>/g, '_');
 
-  private static table(_: string, headers: string, format: string, content: string) {
-    const align = format
-      .split('|')
-      .filter((__, i, arr) => i > 0 && i < arr.length - 1)
-      .map(col => (/:-+:/g.test(col) ? 'center' : /-+:/g.test(col) ? 'right' : /:-+/.test(col) ? 'left' : ''));
-    const td = (col: number) => {
-      const a = align[col];
-      return a ? ` align="${a}"` : '';
-    };
-    const h = `<tr>${headers
-      .split('|')
-      .map(header => header.trim())
-      .filter(header => header && header.length)
-      .map((header, i) => `<th${td(i)}>${header}</th>`)
-      .join('')}</tr>`;
-    const rows = content
-      .split('\n')
-      .map(row => row.trim())
-      .filter(row => row && row.length);
-    const c = rows
-      .map(
-        row =>
-          `<tr>${row
-            .split('|')
-            .filter((__, i) => i > 0 && i <= rows.length)
-            .map((cell, i) => `<td${td(i)}>${cell.trim()}</td>`)
-            .join('')}</tr>`
-      )
-      .join('');
-    return `\n<table><tbody>${h}${c}</tbody></table>\n`;
-  }
+const header = (_: string, match: string, h = '') => {
+  const level = match.length;
+  return `<h${level}>${h.trim()}</h${level}>`;
+};
 
-  private static cleanUpUrl(link: string) {
-    return link.replace(/<\/?em>/g, '_');
-  }
+const rules = [
+  [/\r\n/g, '\n'], // Remove \r
+  [/\n(#+)(.*)/g, header], // headers
+  [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src=\'$2\' alt=\'$1\'>'], // images, invoked before links
+  [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href=\'$2\'>$1</a>'], // links
+  [/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'], // bold
+  [/(\*|_)(.*?)\1/g, '<em>$2</em>'], // emphasis
+  [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
+  [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
+  [/\n\s*```\n([^]*?)\n\s*```\s*\n/g, '\n<pre>$1</pre>'], // codeblock
+  [/`(.*?)`/g, (_: string, code: string) => `<code>${esc(code)}</code>`], // inline code
+  [/\n(\*|\-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
+  [/\n[0-9]+\.(.*)/g, olList], // ol lists
+  [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
+  [/\n-{5,}/g, '\n<hr />'], // horizontal rule
+  [/(\|[^\n]+\|\r?\n)((?:\|:?[-]+:?)+\|)(\n(?:\|[^\n]+\|\r?\n?)*)?/g, table],
+  [/\n([^\n]+)\n/g, para], // add paragraphs
+  [/\s?<\/ul>\s?<ul>/g, ''], // fix extra ul
+  [/\s?<\/ol>\s?<ol>/g, ''], // fix extra ol
+  [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
+  [/https?:\/\/[^"']*/g, cleanUpUrl], // fix em in links
+] as Array<[RegExp, RegexReplacer | string]>;
 
-  private static header(_: string, match: string, header = '') {
-    const level = match.length;
-    return `<h${level}>${header.trim()}</h${level}>`;
-  }
-}
+/**
+ * Render some Markdown into HTML.
+ */
+export const render = (markdown: string) => {
+  markdown = `\n${markdown}\n`;
+  rules.forEach(([regex, subst]) => {
+    markdown = markdown.replace(regex, subst as any);
+  });
+  return markdown.trim();
+};
+
+/**
+ * Add a rule.
+ */
+export const addRule = (regex: RegExp, replacement: RegexReplacer | string) => {
+  rules.push([regex, replacement]);
+};

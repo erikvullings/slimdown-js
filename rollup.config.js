@@ -7,26 +7,27 @@ const production = !process.env.ROLLUP_WATCH;
 
 export default {
   input: `src/index.ts`,
-  watch: 'src/**',
   output: [
-    {
-      name: 'slimdown',
-      file: pkg.main,
-      format: 'iife',
-      sourcemap: true,
-    },
     {
       file: pkg.module,
       format: 'es',
+      sourcemap: true,
+    },
+    {
+      file: pkg.main,
+      format: 'iife',
+      name: 'slimdown',
       sourcemap: true,
     },
   ],
   plugins: [
     // Compile TypeScript files
     typescript({
+      exclude: [ "*.d.ts", "**/*.d.ts", "**/*.test.ts", "**/*.test.d.ts" ],
       rollupCommonJSResolveHack: true,
       // tsconfigOverride: { compilerOptions: { module: 'ES2015' } },
       typescript: require('typescript'),
+      objectHashIgnoreUnknownHack: true,
     }),
     // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
     // commonjs(),

@@ -49,34 +49,32 @@ console.log(Slimdown.render('# Page title\n\nAnd **now** for something _complete
 A simple rule to convert `:)` to an image:
 
 ```ts
-import { Slimdown } from 'slimdown-js';
+import { render, addRule } from 'slimdown-js';
 
-Slimdown.addRule ('/(\W)\:\)(\W)/', '$1<img src="smiley.png" />$2');
+addRule ('/(\W)\:\)(\W)/', '$1<img src="smiley.png" />$2');
 
-console.log(Slimdown.render(('Know what I\'m sayin? :)'));
+console.log(render(('Know what I\'m sayin? :)'));
 ```
 
 In this example, we add GitHub-style internal linking
 (e.g., `[[Another Page]]`).
 
 ```ts
-import { Slimdown } from 'slimdown-js';
-
-console.log(Slimdown.render(
+import { render, addRule } from 'slimdown-js';
 
 const mywiki_internal_link = (title: string) => `<a href="${title.replace(/[^a-zA-Z0-9_-]+/g, '_')}">${title}</a>`;
 
-Slimdown.add_rule('/\[\[(.*?)\]\]/e', mywiki_internal_link('$1'));
+addRule('/\[\[(.*?)\]\]/e', mywiki_internal_link('$1'));
 
-console.log(Slimdown.render ('Check [[This Page]] out!'));
+console.log(render ('Check [[This Page]] out!'));
 ```
 
 ### A longer example
 
 ```ts
-import { Slimdown } from 'slimdown-js';
+import { render } from 'slimdown-js';
 
-console.log(Slimdown.render(`# A longer example
+console.log(render(`# A longer example
 
 And *now* [a link](http://www.google.com) to **follow** and [another](http://yahoo.com/).
 

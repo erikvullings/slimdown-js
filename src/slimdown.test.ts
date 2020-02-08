@@ -1,11 +1,11 @@
-import { Slimdown } from './slimdown';
+import { render } from './slimdown';
 import test from 'ava';
 
 const removeWhitespaces = (txt: string) => txt.replace(/\s+/g, '');
 
 test('parsing header', t => {
   const expected = '<h1>Hello world</h1>';
-  const html = Slimdown.render('# Hello world');
+  const html = render('# Hello world');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
@@ -15,7 +15,7 @@ test('parsing strong in own paragraph', t => {
   **Featuring** songs by ...
 
   Pay what you want for Music`;
-  const generated = Slimdown.render(md);
+  const generated = render(md);
   const expected = `<p>
 An <strong>indie electronica music</strong> bundle.
 </p>
@@ -91,7 +91,7 @@ across two lines.</blockquote>
 <p>
 More text...
 </p>`;
-  const html = Slimdown.render(md);
+  const html = render(md);
 
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -102,7 +102,7 @@ test('parsing links with underscores', t => {
   [Test Link](http://www.google.com/?some_param=another_value)`;
   const expected = `<h1>Links fail with underscores</h1>
   <p><a href='http://www.google.com/?some_param=another_value'>Test Link</a></p>`;
-  const html = Slimdown.render(md);
+  const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
@@ -110,7 +110,7 @@ test('parsing images', t => {
   const md = `NS logo image: ![ns logo](https://www.ns.nl/static/generic/2.49.1/images/nslogo.svg)`;
   const expected =
     `<p>NS logo image: <img src='https://www.ns.nl/static/generic/2.49.1/images/nslogo.svg' alt='ns logo'></p>`;
-  const html = Slimdown.render(md);
+  const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
@@ -123,7 +123,7 @@ codeblock
 `;
   const expected =
     `<h1>Code example</h1><pre>Tab indented codeblock</pre>`;
-  const html = Slimdown.render(md);
+  const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
@@ -162,6 +162,6 @@ test('parsing tables', t => {
         </tr>
       </tbody>
     </table>`;
-  const html = Slimdown.render(md);
+  const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
