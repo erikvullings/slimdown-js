@@ -1,6 +1,6 @@
 {
   "name": "slimdown-js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/slimdown.js",
   "module": "dist/slimdown.mjs",
   "typings": "dist/slimdown.d.ts",
