@@ -1,6 +1,6 @@
 devDependencies:
-  '@ava/typescript': 1.1.0
   ava: 3.2.0
+  esm: 3.2.25
   rimraf: 3.0.1
   rollup: 1.31.0
   rollup-plugin-sourcemaps: 0.5.0_rollup@1.31.0
@@ -11,15 +11,6 @@ devDependencies:
   typescript: 3.7.5
 lockfileVersion: 5.1
 packages:
-  /@ava/typescript/1.1.0:
-    dependencies:
-      escape-string-regexp: 2.0.0
-      is-plain-object: 3.0.0
-    dev: true
-    engines:
-      node: '>=10.18.0 <11 || >=12.14.0 <13 || >=13.5.0'
-    resolution:
-      integrity: sha512-WJ8icXvORhF40jkR4UUTcoeqHhLkgQhf1qUmkqQLPlOKdsjXSRizwmFX0STUGvrdR0qLmD697cAtTwWA8HHCRA==
   /@babel/code-frame/7.8.3:
     dependencies:
       '@babel/highlight': 7.8.3
@@ -716,6 +707,12 @@ packages:
       node: '>=8'
     resolution:
       integrity: sha512-UpzcLCXolUWcNu5HtVMHYdXJjArjsF9C0aNnquZYY4uW/Vu0miy5YoWvbV345HauVvcAUnpRuhMMcqTcGOY2+w==
+  /esm/3.2.25:
+    dev: true
+    engines:
+      node: '>=6'
+    resolution:
+      integrity: sha512-U1suiZ2oDVWv4zPO56S0NcR5QriEahGtdN2OR6FiOG4WJvcjBVFB0qI4+eKoWFH483PKGuLuu6V8Z4T5g63UVA==
   /esprima/4.0.1:
     dev: true
     engines:
@@ -821,6 +818,8 @@ packages:
     engines:
       node: ^8.16.0 || ^10.6.0 || >=11.0.0
     optional: true
+    os:
+      - darwin
     resolution:
       integrity: sha512-R4wDiBwZ0KzpgOWetKDug1FZcYhqYnUYKtfZYt4mD5SBz76q0KR4Q9o7GIPamsVPGmW3EYPPJ0dOOjvx32ldZA==
   /get-caller-file/2.0.5:
@@ -2197,8 +2196,8 @@ packages:
     resolution:
       integrity: sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==
 specifiers:
-  '@ava/typescript': ^1.1.0
   ava: ^3.2.0
+  esm: ^3.2.25
   rimraf: ^3.0.1
   rollup: ^1.31.0
   rollup-plugin-sourcemaps: ^0.5.0
