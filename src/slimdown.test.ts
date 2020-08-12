@@ -12,7 +12,7 @@ test('parsing header', (t) => {
 test('process single underscore', (t) => {
   const expected = '<p>Hello_world</p>';
   const html = render('Hello_world');
-  const html2 = render('Hello_world');
+  const html2 = render('Hello\\_world');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
   t.is(removeWhitespaces(html2), removeWhitespaces(expected));
 });
@@ -52,6 +52,10 @@ To use **Slimdown**, grap it from [npm](https://www.npmjs.com/package/slimdown-j
 * One
 * Two
 * Three
+
+## Underscores
+
+my\\_var\\_is
 
 ## Subhead
 
