@@ -22,6 +22,7 @@ Supports the following elements (and can be extended via
 - Code blocks
 - Blockquotes
 - Tables
+- Underscores (\_)
 - Ordered/unordered lists (one level deep only)
 
 ## Size
@@ -41,7 +42,11 @@ Here is the general use case:
 ```ts
 import { Slimdown } from 'slimdown-js';
 
-console.log(Slimdown.render('# Page title\n\nAnd **now** for something _completely_ different.'));
+console.log(
+  Slimdown.render(
+    '# Page title\n\nAnd **now** for something _completely_ different.',
+  ),
+);
 ```
 
 ### Adding rules
@@ -62,11 +67,12 @@ In this example, we add GitHub-style internal linking
 ```ts
 import { render, addRule } from 'slimdown-js';
 
-const mywiki_internal_link = (title: string) => `<a href="${title.replace(/[^a-zA-Z0-9_-]+/g, '_')}">${title}</a>`;
+const mywiki_internal_link = (title: string) =>
+  `<a href="${title.replace(/[^a-zA-Z0-9_-]+/g, '_')}">${title}</a>`;
 
-addRule('/\[\[(.*?)\]\]/e', mywiki_internal_link('$1'));
+addRule('/[[(.*?)]]/e', mywiki_internal_link('$1'));
 
-console.log(render ('Check [[This Page]] out!'));
+console.log(render('Check [[This Page]] out!'));
 ```
 
 ### A longer example

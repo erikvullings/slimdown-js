@@ -9,9 +9,17 @@ test('parsing header', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('process underscores', (t) => {
+test('process single underscore', (t) => {
   const expected = '<p>Hello_world</p>';
   const html = render('Hello_world');
+  const html2 = render('Hello_world');
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+  t.is(removeWhitespaces(html2), removeWhitespaces(expected));
+});
+
+test('process double underscores', (t) => {
+  const expected = '<p>here_a_test</p>';
+  const html = render('here\\_a\\_test');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 

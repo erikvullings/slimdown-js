@@ -37,7 +37,7 @@ const esc = (s: string) => {
   for (let i = 0; i < l; i++) {
     s = s.replace(
       RegExp('\\' + escChars[i], 'g'),
-      (m) => `&#${m.charCodeAt(0)};`
+      (m) => `&#${m.charCodeAt(0)};`,
     );
   }
   return s;
@@ -70,7 +70,7 @@ const table = (_: string, headers: string, format: string, content: string) => {
         ? 'right'
         : /:-+/.test(col)
         ? 'left'
-        : ''
+        : '',
     );
   const td = (col: number) => {
     const a = align[col];
@@ -93,7 +93,7 @@ const table = (_: string, headers: string, format: string, content: string) => {
           .split('|')
           .filter((__, i) => i > 0 && i <= rows.length)
           .map((cell, i) => `<td${td(i)}>${cell.trim()}</td>`)
-          .join('')}</tr>`
+          .join('')}</tr>`,
     )
     .join('');
   return `\n<table><tbody>${h}${c}</tbody></table>\n`;
@@ -109,9 +109,10 @@ const header = (_: string, match: string, h = '') => {
 const rules = [
   [/\r\n/g, '\n'], // Remove \r
   [/\n(#+)(.*)/g, header], // headers
-  [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src=\'$2\' alt=\'$1\'>'], // images, invoked before links
-  [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href=\'$2\'>$1</a>'], // links
+  [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, "<img src='$2' alt='$1'>"], // images, invoked before links
+  [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, "<a href='$2'>$1</a>"], // links
   [/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'], // bold
+  [/\\_/g, '&#95;'], // underscores part 1
   [/(\*|_)(.*?)\1/g, '<em>$2</em>'], // emphasis
   [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
   [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
@@ -127,6 +128,7 @@ const rules = [
   [/\s?<\/ol>\s?<ol>/g, ''], // fix extra ol
   [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
   [/https?:\/\/[^"']*/g, cleanUpUrl], // fix em in links
+  [/&#95;/g, '_'], // underscores part 2
 ] as Array<[RegExp, RegexReplacer | string]>;
 
 /**
