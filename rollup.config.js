@@ -1,4 +1,3 @@
-import sourceMaps from 'rollup-plugin-sourcemaps';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
 
@@ -11,19 +10,17 @@ export default {
     {
       file: pkg.module,
       format: 'es',
-      sourcemap: true,
     },
     {
       file: pkg.main,
       format: 'iife',
       name: 'slimdown',
-      sourcemap: true,
     },
   ],
   plugins: [
     // Compile TypeScript files
     typescript({
-      exclude: [ "*.d.ts", "**/*.d.ts", "**/*.test.ts", "**/*.test.d.ts" ],
+      exclude: ['*.d.ts', '**/*.d.ts', '**/*.test.ts', '**/*.test.d.ts'],
       rollupCommonJSResolveHack: true,
       // tsconfigOverride: { compilerOptions: { module: 'ES2015' } },
       typescript: require('typescript'),
@@ -39,9 +36,7 @@ export default {
     //     moduleDirectory: 'node_modules',
     //   },
     // }),
-    // Resolve source maps to the original source
-    sourceMaps(),
     // minifies generated bundles
-    production && terser({ sourcemap: true }),
+    production && terser(),
   ],
 };
