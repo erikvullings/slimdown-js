@@ -84,6 +84,10 @@ To use <strong>Slimdown</strong>, grap it from <a href='https://www.npmjs.com/pa
   <li>Three</li>
 </ul>
 
+<h2>Underscores</h2>
+
+<p>my_var_is</p>
+
 <h2>Subhead</h2>
 
 <p>
@@ -178,5 +182,22 @@ test('parsing tables', (t) => {
       </tbody>
     </table>`;
   const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('removing paragraphs', (t) => {
+  const expected = 'Hello world';
+  const html = render('Hello world', true);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('do not remove paragraphs for longer text', (t) => {
+  const expected = `<h1>Hello world</h1><p>How are you?</p>`;
+  const html = render(
+    `# Hello world
+
+How are you?`,
+    true,
+  );
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });

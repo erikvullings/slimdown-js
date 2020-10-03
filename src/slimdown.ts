@@ -133,13 +133,17 @@ const rules = [
 
 /**
  * Render some Markdown into HTML.
+ * Optionally remove the paragraphs around the rendered HTML.
  */
-export const render = (markdown: string) => {
+export const render = (markdown: string, removeParagraphs = false) => {
   markdown = `\n${markdown}\n`;
   rules.forEach(([regex, subst]) => {
     markdown = markdown.replace(regex, subst as any);
   });
-  return markdown.trim();
+
+  return removeParagraphs
+    ? markdown.trim().replace(/^<p>(.*)<\/p>$/s, '$1')
+    : markdown.trim();
 };
 
 /**
