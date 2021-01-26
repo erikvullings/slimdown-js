@@ -1,1 +1,1 @@
-export * from './slimdown';
+export { render, addRule, RegexReplacer } from './slimdown';
