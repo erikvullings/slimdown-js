@@ -14,7 +14,7 @@ export default {
     {
       file: pkg.main,
       format: 'iife',
-      name: 'slimdown',
+      name: 'index',
     },
   ],
   plugins: [
@@ -24,7 +24,7 @@ export default {
       rollupCommonJSResolveHack: true,
       // tsconfigOverride: { compilerOptions: { module: 'ES2015' } },
       typescript: require('typescript'),
-      objectHashIgnoreUnknownHack: true,
+      // objectHashIgnoreUnknownHack: true,
     }),
     // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
     // commonjs(),
