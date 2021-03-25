@@ -3,6 +3,8 @@
   "version": "0.3.3",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "esmodule": "dist/index.modern.js",
+  "unpkg": "dist/index.umd.js",
   "typings": "dist/index.d.ts",
   "description": "A regex-based Markdown parser.",
   "repository": {
@@ -26,8 +28,8 @@
   "scripts": {
     "test": "ava --watch",
     "clean": "rimraf .rpt2_cache dist lib",
-    "build": "rollup -c",
-    "start": "rollup -c -w",
+    "build": "microbundle src/index.ts",
+    "start": "microbundle watch src/index.ts",
     "dry-run": "npm publish --dry-run",
     "patch-release": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
     "minor-release": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
@@ -36,13 +38,11 @@
   "devDependencies": {
     "ava": "^3.15.0",
     "esm": "^3.2.25",
+    "microbundle": "^0.13.0",
     "rimraf": "^3.0.2",
-    "rollup": "^2.38.0",
-    "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-typescript2": "^0.29.0",
     "ts-node": "^9.1.1",
     "tslib": "^2.1.0",
-    "typescript": "^4.1.3"
+    "typescript": "^4.2.3"
   },
   "ava": {
     "extensions": [
