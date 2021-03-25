@@ -1,4 +1,4 @@
-import { render } from './slimdown';
+import { render } from '.';
 import test from 'ava';
 
 const removeWhitespaces = (txt: string) => txt.replace(/\s+/g, '');
