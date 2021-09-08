@@ -30,10 +30,14 @@ test('process table 1', (t) => {
   | terrorist        | scenario 1 | scenario 2 |
   | criminal         | scenario 3 | scenario 4 |
   `;
-  const expected =
-    '<table><tbody><tr><th>Threat \\ Context</th><th>rainy</th><th>sunny</th></tr><tr><td>terrorist</td><td>scenario 1</td></tr><tr><td>criminal</td><td>scenario 3</td></tr></tbody></table>';
+  const expected = `<table>
+<tbody>
+  <tr><th>Threat \\ Context</th><th>rainy</th><th>sunny</th></tr>
+  <tr><td>terrorist</td><td>scenario 1</td><td>scenario 2</td></tr>
+  <tr><td>criminal</td><td>scenario 3</td><td>scenario 4</td></tr>
+</tbody>
+</table>`;
   const html = render(table);
-  console.log(html);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
@@ -44,8 +48,13 @@ test('process table 2', (t) => {
   | terrorist        | scenario 1 | scenario 2 |
   | criminal         | scenario 3 | scenario 4 |
   `;
-  const expected =
-    '<table><tbody><tr><th>Threat \\ Context</th><th>rainy</th><th>sunny</th></tr><tr><td>terrorist</td><td>scenario 1</td></tr><tr><td>criminal</td><td>scenario 3</td></tr></tbody></table>';
+  const expected = `<table>
+<tbody>
+  <tr><th>Threat \\ Context</th><th>rainy</th><th>sunny</th></tr>
+  <tr><td>terrorist</td><td>scenario 1</td><td>scenario 2</td></tr>
+  <tr><td>criminal</td><td>scenario 3</td><td>scenario 4</td></tr>
+</tbody>
+</table>`;
   const html = render(table);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });

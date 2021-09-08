@@ -91,7 +91,7 @@ const table = (_: string, headers: string, format: string, content: string) => {
       (row) =>
         `<tr>${row
           .split('|')
-          .filter((__, i) => i > 0 && i <= rows.length)
+          .filter((__, i, arr) => i > 0 && i < arr.length - 1)
           .map((cell, i) => `<td${td(i)}>${cell.trim()}</td>`)
           .join('')}</tr>`,
     )
