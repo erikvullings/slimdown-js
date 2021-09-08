@@ -122,7 +122,10 @@ const rules = [
   [/\n[0-9]+\.(.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/\n-{5,}/g, '\n<hr />'], // horizontal rule
-  [/(\|[^\n]+\|\r?\n)((?:\|:?[-]+:?)+\|)(\n(?:\|[^\n]+\|\r?\n?)*)?/g, table],
+  [
+    /( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
+    table,
+  ],
   [/\n([^\n]+)\n/g, para], // add paragraphs
   [/\s?<\/ul>\s?<ul>/g, ''], // fix extra ul
   [/\s?<\/ol>\s?<ol>/g, ''], // fix extra ol
