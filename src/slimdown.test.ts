@@ -112,7 +112,7 @@ More text...`;
   const expected = `<h1>Title</h1>
 
 <p>
-To use <strong>Slimdown</strong>, grap it from <a href='https://www.npmjs.com/package/slimdown-js'>npm</a> or <em>fork</em> the project on <a href='https://github.com/erikvullings/slimdown-js'>GitHub</a>.
+To use <strong>Slimdown</strong>, grap it from <a href="https://www.npmjs.com/package/slimdown-js">npm</a> or <em>fork</em> the project on <a href="https://github.com/erikvullings/slimdown-js">GitHub</a>.
 </p>
 <ul>
   <li>One</li>
@@ -159,14 +159,14 @@ test('parsing links with underscores', (t) => {
 
   [Test Link](http://www.google.com/?some_param=another_value)`;
   const expected = `<h1>Links fail with underscores</h1>
-  <p><a href='http://www.google.com/?some_param=another_value'>Test Link</a></p>`;
+  <p><a href="http://www.google.com/?some_param=another_value">Test Link</a></p>`;
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
 test('parsing images', (t) => {
   const md = `NS logo image: ![ns logo](https://www.ns.nl/static/generic/2.49.1/images/nslogo.svg)`;
-  const expected = `<p>NS logo image: <img src='https://www.ns.nl/static/generic/2.49.1/images/nslogo.svg' alt='ns logo'></p>`;
+  const expected = `<p>NS logo image: <img src="https://www.ns.nl/static/generic/2.49.1/images/nslogo.svg" alt="ns logo"></p>`;
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -236,4 +236,19 @@ How are you?`,
     true,
   );
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('creating links', (t) => {
+  const md = 'This is a [link](https://www.google.com).';
+  const expected = 'This is a <a href="https://www.google.com">link</a>.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating external links', (t) => {
+  const md = 'This is a [link](https://www.google.com).';
+  const expected =
+    'This is a <a target="_blank" href="https://www.google.com">link</a>.';
+  const html = render(md, true, true);
+  t.is(html.trim(), expected);
 });
