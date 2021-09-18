@@ -166,7 +166,7 @@ export const render = (
 };
 
 /**
- * Add a rule.
+ * Add a new rule.
  */
 export const addRule = (regex: RegExp, replacement: RegexReplacer | string) => {
   rules.push([regex, replacement]);
