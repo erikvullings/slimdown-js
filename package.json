@@ -36,7 +36,7 @@
     "major-release": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
   },
   "devDependencies": {
-    "ava": "^3.15.0",
+    "ava": "^4.3.3",
     "esm": "^3.2.25",
     "microbundle": "^0.13.3",
     "rimraf": "^3.0.2",
