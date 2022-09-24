@@ -16,6 +16,7 @@ export type RegexReplacer = (substring: string, ...args: any[]) => string;
  * - Blockquotes
  * - Ordered/unordered lists (one level only)
  * - Horizontal rules
+ * - Superscript and subscript (`z_1_` or `a^2^`)
  *
  * Original author: Johnny Broadway <johnny@johnnybroadway.com>
  * Website: https://gist.github.com/jbroadway/2836900
@@ -58,6 +59,12 @@ const olList = (_: string, item = '') =>
 
 const blockquote = (_: string, __: string, item = '') =>
   `\n<blockquote>${item.trim()}</blockquote>`;
+
+// const superscript = (_: string, __: string, item = '') =>
+//   `<sup>${item.trim()}</sup>`;
+
+// const subscript = (_: string, __: string, item = '') =>
+//   `<sub>${item.trim()}</sub>`;
 
 const table = (_: string, headers: string, format: string, content: string) => {
   const align = format
@@ -121,6 +128,8 @@ const rules = [
   [/\n(\*|\-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
   [/\n[0-9]+\.(.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
+  [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // bold
+  [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // bold
   [/\n-{5,}/g, '\n<hr />'], // horizontal rule
   [
     /( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,

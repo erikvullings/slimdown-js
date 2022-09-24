@@ -4,12 +4,10 @@ A basic regex-based Markdown parser based on the gist by [Johnny Broadway](https
 
 Inspired by:
 
-- https://gist.github.com/plugnburn/f0d12e38b6416a77c098
-- https://github.com/Chalarangelo/parse-md-js/blob/master/parsemd.js
-- https://gist.github.com/plugnburn/f0d12e38b6416a77c098
+- [Landmark: the simplest Markdown engine for the browser](https://gist.github.com/plugnburn/f0d12e38b6416a77c098)
+- [parse-md-js](https://github.com/Chalarangelo/parse-md-js/blob/master/parsemd.js)
 
-Supports the following elements (and can be extended via
-`Slimdown.add_rule(regexp: RegExp, replacement: string | Function)`):
+Supports the following elements (and can be extended via `addRule(regexp: RegExp, replacement: string | Function)`):
 
 - Headers
 - Images
@@ -22,12 +20,13 @@ Supports the following elements (and can be extended via
 - Code blocks
 - Blockquotes
 - Tables
-- Underscores (\_)
+- Underscores (Escape underscores to keep them `\_`)
 - Ordered/unordered lists (one level deep only)
+- Superscript and subscript (`z~1~` or `a^2^`)
 
 ## Size
 
-The main reason for using this library, which hasn't been extensively tested and is not completely compatible with the spec, is to have something small. Version 0.1.0's size is 2.614 bytes, uncompressed, and 1.267 bytes using gzip compression.
+The main reason for using this library, which hasn't been extensively tested and is not completely compatible with the spec, is to have something small. Version 0.7.0's size is 2.261 bytes uncompressed, and 1.241 bytes using 7z compression.
 
 For more advanced scenario's, however, I can recommend [marked](https://github.com/markedjs/marked), albeit at a bigger size: marked.min.js is 23.372 bytes uncompressed, and 7.684 bytes using gzip.
 
@@ -40,12 +39,10 @@ Head over to [flems.io](https://flems.io) for a [live example](https://flems.io/
 Here is the general use case:
 
 ```ts
-import { Slimdown } from 'slimdown-js';
+import { render } from 'slimdown-js';
 
 console.log(
-  Slimdown.render(
-    '# Page title\n\nAnd **now** for something _completely_ different.',
-  ),
+  render('# Page title\n\nAnd **now** for something _completely_ different.',),
 );
 ```
 

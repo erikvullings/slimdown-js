@@ -1,4 +1,4 @@
-import { render } from '.';
+import { render } from './index.js';
 import test from 'ava';
 
 const removeWhitespaces = (txt: string) => txt.replace(/\s+/g, '');
@@ -20,6 +20,28 @@ test('process single underscore', (t) => {
 test('process double underscores', (t) => {
   const expected = '<p>here_a_test</p>';
   const html = render('here\\_a\\_test');
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('proccess italics', (t) => {
+  const expected = '<p>This is <em>italics</em>.</p>';
+  const html = render('This is _italics_.');
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('proccess superscript', (t) => {
+  const expected =
+    '<p>This is the 1<sup>st</sup> test, and this is the 2<sup>nd</sup> version. But also consider a<sup>2</sup> + b<sup>2</sup> = c<sup>2</sup>.</p>';
+  const html = render(
+    'This is the 1^st^ test, and this is the 2^nd^ version. But also consider a^2^ + b^2^ = c^2^.',
+  );
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('proccess subscript', (t) => {
+  const expected =
+    '<p>This is <em>italics</em> and this is a<sub>1</sub> or C<sub>2</sub>.</p>';
+  const html = render('This is _italics_ and this is a~1~ or C~2~.');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 

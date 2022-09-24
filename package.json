@@ -1,11 +1,16 @@
 {
   "name": "slimdown-js",
   "version": "0.6.1",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "esmodule": "dist/index.modern.js",
-  "unpkg": "dist/index.umd.js",
-  "typings": "dist/index.d.ts",
+  "source": "src/index.ts",
+  "main": "dist/slimdown.cjs",
+  "module": "dist/slimdown.module.mjs",
+  "exports": {
+    "require": "./dist/slimdown.cjs",
+    "default": "./dist/slimdown.modern.mjs"
+  },
+  "unpkg": "dist/slimdown.umd.js",
+  "typings": "dist/slimdown.d.ts",
+  "type": "module",
   "description": "A regex-based Markdown parser.",
   "repository": {
     "type": "git",
@@ -26,31 +31,31 @@
   },
   "homepage": "https://github.com/erikvullings/slimdown-js#readme",
   "scripts": {
-    "test": "ava --watch",
+    "test": "ava --watch src/slimdown.test.ts",
     "clean": "rimraf .rpt2_cache dist lib",
     "build": "microbundle src/index.ts",
     "start": "microbundle watch src/index.ts",
     "dry-run": "npm publish --dry-run",
-    "patch-release": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
-    "minor-release": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
-    "major-release": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
+    "patch": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
+    "minor": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
+    "major": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
   },
   "devDependencies": {
+    "@types/node": "^18.7.19",
     "ava": "^4.3.3",
     "esm": "^3.2.25",
-    "microbundle": "^0.13.3",
+    "microbundle": "^0.15.1",
     "rimraf": "^3.0.2",
-    "ts-node": "^10.2.1",
-    "tslib": "^2.3.1",
-    "typescript": "^4.4.3"
+    "ts-node": "^10.9.1",
+    "tslib": "^2.4.0",
+    "typescript": "^4.8.3"
   },
   "ava": {
-    "extensions": [
-      "ts"
-    ],
-    "require": [
-      "esm",
-      "ts-node/register"
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--loader=ts-node/esm"
     ]
   }
 }
