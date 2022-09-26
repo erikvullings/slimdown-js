@@ -1,6 +1,6 @@
 {
   "name": "slimdown-js",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "source": "src/index.ts",
   "main": "dist/slimdown.cjs",
   "module": "dist/slimdown.module.mjs",
