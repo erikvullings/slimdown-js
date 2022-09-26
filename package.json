@@ -9,7 +9,7 @@
     "default": "./dist/slimdown.modern.mjs"
   },
   "unpkg": "dist/slimdown.umd.js",
-  "typings": "dist/slimdown.d.ts",
+  "typings": "dist/index.d.ts",
   "type": "module",
   "description": "A regex-based Markdown parser.",
   "repository": {
