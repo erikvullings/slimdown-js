@@ -118,9 +118,9 @@ const rules = [
   [/\n(#+)(.*)/g, header], // headers
   [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
   [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href="$2">$1</a>'], // links
-  [/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'], // bold
+  [/([^\\])(\*\*|__)(.*?)\2/g, '$1<strong>$3</strong>'], // bold
+  [/([^\\])(\*|_)(.*?)\2/g, '$1<em>$3</em>'], // emphasis
   [/\\_/g, '&#95;'], // underscores part 1
-  [/(\*|_)(.*?)\1/g, '<em>$2</em>'], // emphasis
   [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
   [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
   [/\n\s*```\n([^]*?)\n\s*```\s*\n/g, '\n<pre>$1</pre>'], // codeblock
