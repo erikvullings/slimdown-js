@@ -41,14 +41,14 @@
     "major": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
   },
   "devDependencies": {
-    "@types/node": "^18.7.19",
-    "ava": "^4.3.3",
+    "@types/node": "^20.6.2",
+    "ava": "^5.3.1",
     "esm": "^3.2.25",
     "microbundle": "^0.15.1",
-    "rimraf": "^3.0.2",
+    "rimraf": "^5.0.1",
     "ts-node": "^10.9.1",
-    "tslib": "^2.4.0",
-    "typescript": "^4.8.3"
+    "tslib": "^2.6.2",
+    "typescript": "^5.2.2"
   },
   "ava": {
     "extensions": {
