@@ -118,7 +118,7 @@ const rules = [
   [/\n(#+)(.*)/g, header], // headers
   [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
   [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href="$2">$1</a>'], // links
-  [/([^\\])(\*\*|__)(.*?)\2/g, '$1<strong>$3</strong>'], // bold
+  [/([^\\])(\*\*|__)(.*?(_|\*)?)\2/g, '$1<strong>$3</strong>'], // bold
   [/([^\\])(\*|_)(.*?)\2/g, '$1<em>$3</em>'], // emphasis
   [/\\_/g, '&#95;'], // underscores part 1
   [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
@@ -128,8 +128,8 @@ const rules = [
   [/\n(\*|\-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
   [/\n[0-9]+\.(.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
-  [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // bold
-  [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // bold
+  [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
+  [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript
   [/\n-{5,}/g, '\n<hr />'], // horizontal rule
   [
     /( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
