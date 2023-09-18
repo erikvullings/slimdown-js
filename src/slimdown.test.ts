@@ -205,6 +205,13 @@ codeblock
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('parsing inline code', (t) => {
+  const md = `This is \`inline\` code.`;
+  const expected = `This is <code>inline</code> code.`;
+  const html = render(md, true);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
 test('parsing tables', (t) => {
   const md = `# Table example
 
@@ -272,5 +279,77 @@ test('creating external links', (t) => {
   const expected =
     'This is a <a target="_blank" href="https://www.google.com">link</a>.';
   const html = render(md, true, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating links with underscores', (t) => {
+  const md = 'This is a [link](https://my_test_page.com).';
+  const expected = 'This is a <a href="https://my_test_page.com">link</a>.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating emphasized text', (t) => {
+  const md = 'This is _emphasized_ text.';
+  const expected = 'This is <em>emphasized</em> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating emphasized text 2', (t) => {
+  const md = 'This is *emphasized* text.';
+  const expected = 'This is <em>emphasized</em> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating strong text', (t) => {
+  const md = 'This is **strong** text.';
+  const expected = 'This is <strong>strong</strong> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating strong text 2', (t) => {
+  const md = 'This is __strong__ text.';
+  const expected = 'This is <strong>strong</strong> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating strong and empasized text', (t) => {
+  const md = 'This is ***strong and emphasized*** text.';
+  const expected =
+    'This is <strong><em>strong and emphasized</em></strong> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating strong and empasized text 2', (t) => {
+  const md = 'This is ___strong and emphasized___ text.';
+  const expected =
+    'This is <strong><em>strong and emphasized</em></strong> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating deleted text', (t) => {
+  const md = 'This is ~~deleted~~ text.';
+  const expected = 'This is <del>deleted</del> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating quotes', (t) => {
+  const md = 'This is a quote: :"quoted": text.';
+  const expected = 'This is a quote: <q>quoted</q> text.';
+  const html = render(md, true);
+  t.is(html.trim(), expected);
+});
+
+test('creating block quotes', (t) => {
+  const md = '> This is a blockquoted text.';
+  const expected = '<blockquote>This is a blockquoted text.</blockquote>';
+  const html = render(md, true);
   t.is(html.trim(), expected);
 });

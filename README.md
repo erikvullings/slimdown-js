@@ -9,17 +9,17 @@ Inspired by:
 
 Supports the following elements (and can be extended via `addRule(regexp: RegExp, replacement: string | Function)`):
 
-- Headers
-- Images
-- Links
-- Bold
-- Emphasis
-- Deletions
-- Quotes
-- Inline code
-- Code blocks
-- Blockquotes
-- Tables
+- Headers: `# Header 1`, or `## Header 2`
+- Images: `![ALT TEXT](https://my_image_source)`
+- Links: `[ALT TEXT](https://my_image_source)`
+- Bold: `**bold**` or `__bold__`
+- Emphasis: `*italics*` or `_italics_`
+- Deletions: `~~bold~~`
+- Quotes: `This is a quote: :"my quote":`
+- Inline code: `This is \`inline\` code`.
+- Code blocks: Use three subsequent backticks \` to open and close a code block.
+- Blockquotes: Lines starting with `> `.
+- Tables: Use pipes `|` to separate columns, and '-' to separate the table header from its body.
 - Underscores (Escape underscores to keep them `\_`)
 - Ordered/unordered lists (one level deep only)
 - Superscript and subscript (`z~1~` or `a^2^`)
