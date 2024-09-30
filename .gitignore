@@ -64,3 +64,4 @@ typings/
 .rpt2_cache
 dist
 lib
+*.test.js
