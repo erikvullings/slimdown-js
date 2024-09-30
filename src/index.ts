@@ -162,13 +162,14 @@ export const render = (
     markdown = markdown.replace(regex, subst as any);
   });
 
+  markdown = markdown.trim();
   if (removeParagraphs) {
     markdown = markdown.replace(/^<p>(.*)<\/p>$/s, '$1');
   }
   if (externalLinks) {
     markdown = markdown.replace(/<a href="/g, '<a target="_blank" href="');
   }
-  return markdown.trim();
+  return markdown;
 };
 
 /**
