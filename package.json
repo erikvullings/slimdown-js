@@ -34,7 +34,7 @@
     "test": "ava --watch src/slimdown.test.ts",
     "clean": "rimraf .rpt2_cache dist lib",
     "build": "microbundle src/index.ts",
-    "start": "microbundle watch src/index.ts",
+    "start": "tsc -w -p tsconfig.json",
     "dry-run": "npm publish --dry-run",
     "patch": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
     "minor": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
@@ -42,9 +42,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "^5.0.0",
-    "@types/node": "^22.7.4",
     "ava": "^6.1.3",
-    "esm": "^3.2.25",
     "microbundle": "^0.15.1",
     "rimraf": "^6.0.1",
     "tslib": "^2.7.0",
