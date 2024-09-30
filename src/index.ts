@@ -31,18 +31,18 @@ export type RegexReplacer = (substring: string, ...args: any[]) => string;
  * License: MIT
  */
 
-const esc = (s: string) => {
-  s = s.replace(/\&/g, '&amp;');
-  const escChars = '\'#<>`*-~_=:"![]()nt';
-  const l = escChars.length;
-  for (let i = 0; i < l; i++) {
-    s = s.replace(
-      RegExp('\\' + escChars[i], 'g'),
-      (m) => `&#${m.charCodeAt(0)};`,
-    );
-  }
-  return s;
+const escapeMap: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
 };
+
+const escRegex = new RegExp(`[${Object.keys(escapeMap).join('')}]`, 'g');
+
+const esc = (s: string): string =>
+  s.replace(escRegex, (match) => escapeMap[match]);
 
 const para = (_: string, line: string) => {
   const trimmed = line.trim();

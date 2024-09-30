@@ -125,7 +125,7 @@ One __two__ three _four_ five __six__ seven _eight_.
 2. Two
 3. Three
 
-More text with \`inline($code)\` sample.
+More text with \`inline($code);\` sample.
 
 > A block quote
 > across two lines.
@@ -162,7 +162,7 @@ One <strong>two</strong> three <em>four</em> five <strong>six</strong> seven <em
 </ol>
 
 <p>
-More text with <code>inline&#40;$code&#41;</code> sample.
+More text with <code>inline($code);</code> sample.
 </p>
 
 <blockquote>A block quote<br>
@@ -206,8 +206,22 @@ codeblock
 });
 
 test('parsing inline code', (t) => {
-  const md = `This is \`inline\` code.`;
-  const expected = `This is <code>inline</code> code.`;
+  const md = `This is \`inline A & B\` code.`;
+  const expected = `This is <code>inline A &amp; B</code> code.`;
+  const html = render(md, true);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('parsing inline HTML code', (t) => {
+  const md = `This is \`<p>An HTML paragrahp</p>\` code.`;
+  const expected = `This is <code>&lt;p&gt;An HTML paragrahp&lt;/p&gt;</code> code.`;
+  const html = render(md, true);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('bypassing HTML code', (t) => {
+  const md = `<span>An HTML paragrahp</span>`;
+  const expected = `<span>An HTML paragrahp</span>`;
   const html = render(md, true);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
