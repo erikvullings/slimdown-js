@@ -3,13 +3,13 @@ import test from 'ava';
 
 const removeWhitespaces = (txt: string) => txt.replace(/\s+/g, '');
 
-test('parsing header', (t) => {
+test('header', (t) => {
   const expected = '<h1>Hello world</h1>';
   const html = render('# Hello world');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('process single underscore', (t) => {
+test('single underscore', (t) => {
   const expected = '<p>Hello_world</p>';
   const html = render('Hello_world');
   const html2 = render('Hello\\_world');
@@ -17,19 +17,19 @@ test('process single underscore', (t) => {
   t.is(removeWhitespaces(html2), removeWhitespaces(expected));
 });
 
-test('process double underscores', (t) => {
+test('double underscores', (t) => {
   const expected = '<p>here_a_test</p>';
   const html = render('here\\_a\\_test');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('proccess italics', (t) => {
+test('italics', (t) => {
   const expected = '<p>This is <em>italics</em>.</p>';
   const html = render('This is _italics_.');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('proccess superscript', (t) => {
+test('superscript', (t) => {
   const expected =
     '<p>This is the 1<sup>st</sup> test, and this is the 2<sup>nd</sup> version. But also consider a<sup>2</sup> + b<sup>2</sup> = c<sup>2</sup>.</p>';
   const html = render(
@@ -38,14 +38,127 @@ test('proccess superscript', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('proccess subscript', (t) => {
+test('subscript', (t) => {
   const expected =
     '<p>This is <em>italics</em> and this is a<sub>1</sub> or C<sub>2</sub>.</p>';
   const html = render('This is _italics_ and this is a~1~ or C~2~.');
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('process table 1', (t) => {
+test('footnote', (t) => {
+  const expected = `<p>
+Here is a simple footnote<sup id="fnref:1"><a href="#fn:1">[1]</a></sup>. With some additional text after it.
+</p>
+<div class="footnotes">
+  <hr>
+  <ol>
+
+    <li id="fn:1">
+      My reference.
+      <sup><a href="#fnref:1">↩</a></sup>
+    </li>
+  </ol>
+</div>`;
+  const html = render(
+    `Here is a simple footnote[^1]. With some additional text after it.
+
+    [^1]: My reference.`,
+  );
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('code', (t) => {
+  const expected =
+    '<p>This is <code>italics</code> and this is <code>_italics_</code> too.</p>';
+  const html = render('This is `italics` and this is `_italics_` too.');
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('multiline codeblock', (t) => {
+  const expected = `<pre>## Table example
+
+| Tables        | Are           | Cool  |
+|---------------|:-------------:|------:|
+| col 3 is      | right-aligned | $1600 |
+| col 2 is      | centered      |   $12 |
+| zebra stripes | are neat      |    $1 |</pre>`;
+  const html = render(`
+\`\`\`md
+
+## Table example
+
+| Tables        | Are           | Cool  |
+|---------------|:-------------:|------:|
+| col 3 is      | right-aligned | $1600 |
+| col 2 is      | centered      |   $12 |
+| zebra stripes | are neat      |    $1 |
+
+\`\`\`
+`);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('ul', (t) => {
+  const expected = '<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>';
+  const html = render(`- Item 1\n- Item 2\n- Item 3`);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('ul using +', (t) => {
+  const expected = '<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>';
+  const html = render(`+ Item 1\n+ Item 2\n+ Item 3`);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('ul using *', (t) => {
+  const expected = '<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>';
+  const html = render(`* Item 1\n* Item 2\n* Item 3`);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('nested ul + ul', (t) => {
+  const expected =
+    '<ul><li>Item 1</li><ul><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ul><li>Item 2</li><li>Item 3</li></ul>';
+  const html = render(
+    `- Item 1\n  - Item 1.1\n  - Item 1.2\n  - Item 1.3\n- Item 2\n- Item 3`,
+  );
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('nested ul + ol', (t) => {
+  const expected =
+    '<ul><li>Item 1</li><ol><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ol><li>Item 2</li><li>Item 3</li></ul>';
+  const html = render(
+    `- Item 1\n  1. Item 1.1\n  2. Item 1.2\n  3. Item 1.3\n- Item 2\n- Item 3`,
+  );
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('ol', (t) => {
+  const expected = '<ol><li>Item 1</li><li>Item 2</li><li>Item 3</li></ol>';
+  const html = render(`1. Item 1\n2. Item 2\n3. Item 3`);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('nested ol + ol', (t) => {
+  const expected =
+    '<ol><li>Item 1</li><ol><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ol><li>Item 2</li><li>Item 3</li></ol>';
+  const html = render(
+    `1. Item 1\n  1. Item 1.1\n  2. Item 1.2\n  3. Item 1.3\n2. Item 2\n3. Item 3`,
+  );
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('nested ol + ul', (t) => {
+  const expected =
+    '<ol><li>Item 1</li><ul><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ul><li>Item 2</li><li>Item 3</li></ol>';
+  const html = render(
+    `1. Item 1\n  - Item 1.1\n  - Item 1.2\n  - Item 1.3\n2. Item 2\n3. Item 3`,
+  );
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('table 1', (t) => {
   const table = `
   | Threat \\ Context | rainy      | sunny      |
   |------------------|------------|------------|
@@ -63,7 +176,7 @@ test('process table 1', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
-test('process table 2', (t) => {
+test('table 2', (t) => {
   const table = `
   | Threat \\ Context | rainy      | sunny      |
   | ---------------- | ---------- | ---------- |

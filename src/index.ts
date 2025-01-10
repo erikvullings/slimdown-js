@@ -31,6 +31,12 @@ export type RegexReplacer = (substring: string, ...args: any[]) => string;
  * License: MIT
  */
 
+// Store code blocks temporarily to prevent markdown processing within them
+const codeBlocks: string[] = [];
+const inlineCode: string[] = [];
+// Store footnotes
+const footnotes: Array<[id: string, text: string]> = [];
+
 const escapeMap: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
@@ -51,20 +57,85 @@ const para = (_: string, line: string) => {
     : `\n<p>\n${trimmed}\n</p>\n`;
 };
 
-const ulList = (_: string, __: string, item = '') =>
-  `<ul>\n\t<li>${item.trim()}</li>\n</ul>`;
+// const ulList = (_: string, __: string, item = '') =>
+//   `<ul>\n\t<li>${item.trim()}</li>\n</ul>`;
 
-const olList = (_: string, item = '') =>
-  `<ol>\n\t<li>${item.trim()}</li>\n</ol>`;
+const ulList = (
+  _text: string,
+  indent: string,
+  _bullet: string,
+  item: string,
+) => {
+  const level = 1 + Math.floor(indent.length / 2);
+  return (
+    '\n<ul>'.repeat(level) +
+    '\n\t<li>' +
+    item.trim() +
+    '</li>' +
+    '\n</ul>'.repeat(level)
+  );
+};
+
+// const olList = (_: string, item = '') =>
+//   `<ol>\n\t<li>${item.trim()}</li>\n</ol>`;
+
+const olList = (
+  _text: string,
+  indent: string,
+  _bullet: string,
+  item: string,
+) => {
+  const level = 1 + Math.floor(indent.length / 2);
+  return (
+    '\n<ol>'.repeat(level) +
+    '\n\t<li>' +
+    item.trim() +
+    '</li>' +
+    '\n</ol>'.repeat(level)
+  );
+};
 
 const blockquote = (_: string, __: string, item = '') =>
   `\n<blockquote>${item.trim()}</blockquote>`;
 
-// const superscript = (_: string, __: string, item = '') =>
-//   `<sup>${item.trim()}</sup>`;
+// Process footnote references in the text [^1]
+const footnoteReferenceReplacer = (_match: string, id: string) => {
+  // Create a link inside a superscript tag with proper references
+  return `<sup id="fnref:${id}"><a href="#fn:${id}">[${id}]</a></sup>`;
+};
 
-// const subscript = (_: string, __: string, item = '') =>
-//   `<sub>${item.trim()}</sub>`;
+// Process footnote definitions [^1]: Footnote text
+const footnoteDefinitionReplacer = (
+  _match: string,
+  id: string,
+  text: string,
+) => {
+  footnotes.push([id, text.trim()]);
+  return ''; // Remove the definition from the main text
+};
+
+// Generate the footnotes section
+const generateFootnotesSection = () => {
+  if (footnotes.length === 0) return '';
+
+  const footnotesHtml = footnotes
+    .map(
+      ([id, text]) => `
+    <li id="fn:${id}">
+      ${text}
+      <sup><a href="#fnref:${id}">↩</a></sup>
+    </li>`,
+    )
+    .join('\n');
+
+  return `
+<div class="footnotes">
+  <hr>
+  <ol>
+    ${footnotesHtml}
+  </ol>
+</div>`;
+};
 
 const table = (_: string, headers: string, format: string, content: string) => {
   const align = format
@@ -113,6 +184,45 @@ const header = (_: string, match: string, h = '') => {
   return `<h${level}>${h.trim()}</h${level}>`;
 };
 
+// Function to extract and store code blocks
+const extractCodeBlocks = (markdown: string): string => {
+  return markdown.replace(
+    /\n\s*```\w*\n([^]*?)\n\s*```\s*\n/g,
+    (_match, code) => {
+      codeBlocks.push(code);
+      return `\n<pre>{{CODEBLOCKPH${codeBlocks.length - 1}}}</pre>\n`;
+    },
+  );
+};
+
+// Function to extract and store inline code
+const extractInlineCode = (markdown: string): string => {
+  return markdown.replace(/`([^`]+)`/g, (_match, code) => {
+    inlineCode.push(code);
+    return `{{INLINECODEPH${inlineCode.length - 1}}}`;
+  });
+};
+
+// Function to restore code blocks with proper HTML escaping
+const restoreCodeBlocks = (markdown: string): string => {
+  return markdown.replace(
+    /<pre>{{CODEBLOCKPH(\d+)}}<\/pre>/g,
+    (_match, index) => {
+      const code = codeBlocks[parseInt(index)];
+      return `<pre>${esc(code)}</pre>`;
+    },
+  );
+};
+
+// Function to restore inline code with proper HTML escaping
+const restoreInlineCode = (markdown: string): string => {
+  return markdown.replace(/{{INLINECODEPH(\d+)}}/g, (_match, index) => {
+    const code = inlineCode[parseInt(index)];
+    return `<code>${esc(code)}</code>`;
+  });
+};
+
+/** Rules consist of tuples: RegExp, replacer function, repeat */
 const rules = [
   [/\r\n/g, '\n'], // Remove \r
   [/\n(#+)(.*)/g, header], // headers
@@ -123,10 +233,11 @@ const rules = [
   [/\\_/g, '&#95;'], // underscores part 1
   [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
   [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
-  [/\n\s*```\n([^]*?)\n\s*```\s*\n/g, '\n<pre>$1</pre>'], // codeblock
-  [/`(.*?)`/g, (_: string, code: string) => `<code>${esc(code)}</code>`], // inline code
-  [/\n(\*|\-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
-  [/\n[0-9]+\.(.*)/g, olList], // ol lists
+  // [/\n\s*```\n([^]*?)\n\s*```\s*\n/g, '\n<pre>$1</pre>'], // codeblock
+  // [/`(.*?)`/g, (_: string, code: string) => `<code>${esc(code)}</code>`], // inline code
+  [/\n( *)(\*|-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
+  [/\n( *)([0-9]+\.)(.*)/g, olList], // ul lists
+  // [/\n[0-9]+\.(.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript
@@ -135,9 +246,10 @@ const rules = [
     /( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
     table,
   ],
+  [/\[\^([^\]]+)\](?!:)/g, footnoteReferenceReplacer], // footnote references
+  [/\[\^([^\]]+)\]:\s*((?:[^\n]*\n?)*)/g, footnoteDefinitionReplacer], // footnote definitions
   [/\n([^\n]+)\n/g, para], // add paragraphs
-  [/\s?<\/ul>\s?<ul>/g, ''], // fix extra ul
-  [/\s?<\/ol>\s?<ol>/g, ''], // fix extra ol
+  [/\s?<\/[ou]l>\s?<[ou]l>/g, '', 3], // fix extra ol and ul
   [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
   [/https?:\/\/[^"']*/g, cleanUpUrl], // fix em in links
   [/&#95;/g, '_'], // underscores part 2
@@ -157,12 +269,29 @@ export const render = (
   removeParagraphs = false,
   externalLinks = false,
 ) => {
-  markdown = `\n${markdown}\n`;
-  rules.forEach(([regex, subst]) => {
-    markdown = markdown.replace(regex, subst as any);
+  // Reset the storage arrays
+  codeBlocks.length = 0;
+  inlineCode.length = 0;
+  footnotes.length = 0;
+
+  // Extract code blocks and inline code before processing
+  markdown = extractCodeBlocks(`\n${markdown}\n`);
+  markdown = extractInlineCode(markdown);
+
+  // Apply markdown rules
+  rules.forEach(([regex, subst, repeat = 1]) => {
+    for (let i = 0; i < repeat; i++) {
+      markdown = markdown.replace(regex, subst as any);
+    }
   });
 
-  markdown = markdown.trim();
+  // Restore code blocks and inline code with proper escaping
+  markdown = restoreCodeBlocks(markdown);
+  markdown = restoreInlineCode(markdown);
+
+  // Add footnotes section if there are any footnotes
+  markdown = markdown.trim() + generateFootnotesSection();
+
   if (removeParagraphs) {
     markdown = markdown.replace(/^<p>(.*)<\/p>$/s, '$1');
   }
@@ -173,7 +302,7 @@ export const render = (
 };
 
 /**
- * Add a new rule.
+ * Add a new rule: The regex should be global and not use multiline mode.
  */
 export const addRule = (regex: RegExp, replacement: RegexReplacer | string) => {
   rules.push([regex, replacement]);
