@@ -34,6 +34,9 @@ export type RegexReplacer = (substring: string, ...args: any[]) => string;
 // Store code blocks temporarily to prevent markdown processing within them
 const codeBlocks: string[] = [];
 const inlineCode: string[] = [];
+// Store math expressions to prevent markdown processing within them
+const mathBlocks: string[] = [];
+const inlineMath: string[] = [];
 // Store footnotes
 const footnotes: Array<[id: string, text: string]> = [];
 
@@ -57,27 +60,15 @@ const para = (_: string, line: string) => {
     : `\n<p>\n${trimmed}\n</p>\n`;
 };
 
-// const ulList = (_: string, __: string, item = '') =>
-//   `<ul>\n\t<li>${item.trim()}</li>\n</ul>`;
-
 const ulList = (
   _text: string,
   indent: string,
   _bullet: string,
   item: string,
 ) => {
-  const level = 1 + Math.floor(indent.length / 2);
-  return (
-    '\n<ul>'.repeat(level) +
-    '\n\t<li>' +
-    item.trim() +
-    '</li>' +
-    '\n</ul>'.repeat(level)
-  );
+  const level = Math.floor(indent.length / 2);
+  return `\n{{LISTITEM:ul:${level}:${item.trim()}}}\n`;
 };
-
-// const olList = (_: string, item = '') =>
-//   `<ol>\n\t<li>${item.trim()}</li>\n</ol>`;
 
 const olList = (
   _text: string,
@@ -85,18 +76,146 @@ const olList = (
   _bullet: string,
   item: string,
 ) => {
-  const level = 1 + Math.floor(indent.length / 2);
-  return (
-    '\n<ol>'.repeat(level) +
-    '\n\t<li>' +
-    item.trim() +
-    '</li>' +
-    '\n</ol>'.repeat(level)
-  );
+  const level = Math.floor(indent.length / 2);
+  return `\n{{LISTITEM:ol:${level}:${item.trim()}}}\n`;
 };
 
 const blockquote = (_: string, __: string, item = '') =>
   `\n<blockquote>${item.trim()}</blockquote>`;
+
+const taskList = (
+  _text: string,
+  indent: string,
+  checkboxState: string,
+  item: string,
+) => {
+  const level = Math.floor(indent.length / 2);
+  const checked = checkboxState.toLowerCase() === 'x';
+  const checkboxHtml = `<input type="checkbox"${checked ? ' checked' : ''} disabled>`;
+  return `\n{{LISTITEM:ul:${level}:${checkboxHtml} ${item.trim()}}}\n`;
+};
+
+const definitionList = (_: string, term: string, definition: string) => {
+  return `\n<dl><dt>${term.trim()}</dt><dd>${definition.trim()}</dd></dl>\n`;
+};
+
+// Function to process list items into proper nested HTML
+const processListItems = (markdown: string): string => {
+  if (!markdown.includes('{{LISTITEM:')) return markdown;
+  
+  // Find groups of consecutive list items separated by non-list content
+  const lines = markdown.split('\n');
+  const groups: Array<Array<{type: 'ul' | 'ol', level: number, content: string, originalLine: string}>> = [];
+  let currentGroup: Array<{type: 'ul' | 'ol', level: number, content: string, originalLine: string}> = [];
+  
+  for (const line of lines) {
+    const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):(.+)\}\}/);
+    if (listMatch) {
+      currentGroup.push({
+        type: listMatch[1] as 'ul' | 'ol',
+        level: parseInt(listMatch[2]),
+        content: listMatch[3],
+        originalLine: line
+      });
+    } else if (line.trim() !== '') {
+      // Non-empty, non-list line - end current group
+      if (currentGroup.length > 0) {
+        groups.push([...currentGroup]);
+        currentGroup = [];
+      }
+    }
+    // Empty lines don't break list groups
+  }
+  
+  // Add final group if any
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+  
+  if (groups.length === 0) return markdown;
+  
+  // Process each group separately
+  for (const group of groups) {
+    const html = buildNestedList(group);
+    
+    // Replace first item in group with the complete HTML
+    const firstItem = group[0];
+    markdown = markdown.replace(firstItem.originalLine, html);
+    
+    // Remove remaining items in group
+    for (let i = 1; i < group.length; i++) {
+      markdown = markdown.replace(group[i].originalLine, '');
+    }
+  }
+  
+  return markdown;
+};
+
+// Build nested HTML from a group of list items
+const buildNestedList = (listItems: Array<{type: 'ul' | 'ol', level: number, content: string, originalLine: string}>): string => {
+  if (listItems.length === 0) return '';
+  
+  let html = '';
+  const stack: Array<{type: 'ul' | 'ol', level: number, hasOpenLi: boolean}> = [];
+  
+  for (let i = 0; i < listItems.length; i++) {
+    const item = listItems[i];
+    const nextItem = i < listItems.length - 1 ? listItems[i + 1] : null;
+    
+    // Close lists that are deeper than current level
+    while (stack.length > 0 && stack[stack.length - 1].level > item.level) {
+      const last = stack.pop()!;
+      if (last.hasOpenLi) {
+        html += '</li>';
+      }
+      html += `</${last.type}>`;
+    }
+    
+    // Close current list if switching types at same level
+    if (stack.length > 0 && 
+        stack[stack.length - 1].level === item.level && 
+        stack[stack.length - 1].type !== item.type) {
+      const last = stack.pop()!;
+      if (last.hasOpenLi) {
+        html += '</li>';
+      }
+      html += `</${last.type}>`;
+    }
+    
+    // Open new list if needed
+    if (stack.length === 0 || stack[stack.length - 1].level < item.level) {
+      html += `<${item.type}>`;
+      stack.push({type: item.type, level: item.level, hasOpenLi: false});
+    }
+    
+    // Close previous li at same level if needed
+    if (stack.length > 0 && stack[stack.length - 1].hasOpenLi && stack[stack.length - 1].level === item.level) {
+      html += '</li>';
+      stack[stack.length - 1].hasOpenLi = false;
+    }
+    
+    // Add list item
+    html += `<li>${item.content}`;
+    stack[stack.length - 1].hasOpenLi = true;
+    
+    // Close li if next item is not deeper
+    if (!nextItem || nextItem.level <= item.level) {
+      html += '</li>';
+      stack[stack.length - 1].hasOpenLi = false;
+    }
+  }
+  
+  // Close remaining lists
+  while (stack.length > 0) {
+    const last = stack.pop()!;
+    if (last.hasOpenLi) {
+      html += '</li>';
+    }
+    html += `</${last.type}>`;
+  }
+  
+  return html;
+};
 
 // Process footnote references in the text [^1]
 const footnoteReferenceReplacer = (_match: string, id: string) => {
@@ -137,7 +256,7 @@ const generateFootnotesSection = () => {
 </div>`;
 };
 
-const table = (_: string, headers: string, format: string, content: string) => {
+const table = (_: string, headers: string, format: string, content: string = '') => {
   const align = format
     .split('|')
     .filter((__, i, arr) => i > 0 && i < arr.length - 1)
@@ -154,27 +273,84 @@ const table = (_: string, headers: string, format: string, content: string) => {
     const a = align[col];
     return a ? ` align="${a}"` : '';
   };
-  const h = `<tr>${headers
+  const headerCells = headers
     .split('|')
-    .map((hd) => hd.trim())
-    .filter((hd) => hd && hd.length)
-    .map((hd, i) => `<th${td(i)}>${hd}</th>`)
-    .join('')}</tr>`;
+    .filter((__, i, arr) => i > 0 && i < arr.length - 1)
+    .map((hd) => hd.trim());
+    
+  const headerResults = [];
+  let skipNext = 0;
+  
+  for (let i = 0; i < headerCells.length; i++) {
+    if (skipNext > 0) {
+      skipNext--;
+      continue;
+    }
+    
+    const hd = headerCells[i];
+    if (hd.trim()) {
+      // Count consecutive empty cells after this one to determine span
+      let spanCount = 1;
+      for (let j = i + 1; j < headerCells.length && (!headerCells[j] || headerCells[j].trim() === ''); j++) {
+        spanCount++;
+      }
+      if (spanCount > 1) {
+        skipNext = spanCount - 1;
+        headerResults.push(`<th${td(i)} colspan="${spanCount}">${hd}</th>`);
+      } else {
+        headerResults.push(`<th${td(i)}>${hd}</th>`);
+      }
+    }
+  }
+    
+  const h = `<tr>${headerResults.join('')}</tr>`;
   const rows = content
     .split('\n')
     .map((row) => row.trim())
     .filter((row) => row && row.length);
   const c = rows
-    .map(
-      (row) =>
-        `<tr>${row
-          .split('|')
-          .filter((__, i, arr) => i > 0 && i < arr.length - 1)
-          .map((cell, i) => `<td${td(i)}>${cell.trim()}</td>`)
-          .join('')}</tr>`,
-    )
+    .map((row) => {
+      const cells = row
+        .split('|')
+        .filter((__, i, arr) => i > 0 && i < arr.length - 1)
+        .map((cell) => cell.trim());
+        
+      const cellResults = [];
+      let skipNext = 0;
+      
+      for (let i = 0; i < cells.length; i++) {
+        if (skipNext > 0) {
+          skipNext--;
+          continue;
+        }
+        
+        const cell = cells[i];
+        if (cell.trim()) {
+          // Count consecutive empty cells after this one to determine span
+          let spanCount = 1;
+          for (let j = i + 1; j < cells.length && (!cells[j] || cells[j].trim() === ''); j++) {
+            spanCount++;
+          }
+          if (spanCount > 1) {
+            skipNext = spanCount - 1;
+            cellResults.push(`<td${td(i)} colspan="${spanCount}">${cell}</td>`);
+          } else {
+            cellResults.push(`<td${td(i)}>${cell}</td>`);
+          }
+        }
+      }
+      
+      return `<tr>${cellResults.join('')}</tr>`;
+    })
     .join('');
   return `\n<table><tbody>${h}${c}</tbody></table>\n`;
+};
+
+// Enhanced table with caption support
+const tableWithCaption = (_: string, caption: string, headers: string, format: string, content: string = '') => {
+  const tableHtml = table(_, headers, format, content);
+  // Insert caption after <table> tag
+  return tableHtml.replace('<table>', `<table><caption>${caption.trim()}</caption>`);
 };
 
 const cleanUpUrl = (link: string) => link.replace(/<\/?em>/g, '_');
@@ -222,8 +398,46 @@ const restoreInlineCode = (markdown: string): string => {
   });
 };
 
-/** Rules consist of tuples: RegExp, replacer function, repeat */
-const rules = [
+// Function to extract and store math blocks
+const extractMathBlocks = (markdown: string): string => {
+  return markdown.replace(
+    /\n\s*\$\$([^]*?)\$\$\s*\n/g,
+    (_match, math) => {
+      mathBlocks.push(math.trim());
+      return `\n{{MATHBLOCKPH${mathBlocks.length - 1}}}\n`;
+    },
+  );
+};
+
+// Function to extract and store inline math
+const extractInlineMath = (markdown: string): string => {
+  return markdown.replace(/\$([^$\n]+)\$/g, (_match, math) => {
+    inlineMath.push(math);
+    return `{{INLINEMATHPH${inlineMath.length - 1}}}`;
+  });
+};
+
+// Function to restore math blocks
+const restoreMathBlocks = (markdown: string): string => {
+  return markdown.replace(
+    /{{MATHBLOCKPH(\d+)}}/g,
+    (_match, index) => {
+      const math = mathBlocks[parseInt(index)];
+      return `<div class="math-block">${esc(math)}</div>`;
+    },
+  );
+};
+
+// Function to restore inline math
+const restoreInlineMath = (markdown: string): string => {
+  return markdown.replace(/{{INLINEMATHPH(\d+)}}/g, (_match, index) => {
+    const math = inlineMath[parseInt(index)];
+    return `<span class="math-inline">${esc(math)}</span>`;
+  });
+};
+
+/** Pre-paragraph rules (everything except paragraph processing) */
+const preParaRules = [
   [/\r\n/g, '\n'], // Remove \r
   [/\n(#+)(.*)/g, header], // headers
   [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
@@ -233,22 +447,22 @@ const rules = [
   [/\\_/g, '&#95;'], // underscores part 1
   [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
   [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
-  // [/\n\s*```\n([^]*?)\n\s*```\s*\n/g, '\n<pre>$1</pre>'], // codeblock
-  // [/`(.*?)`/g, (_: string, code: string) => `<code>${esc(code)}</code>`], // inline code
+  [/\n( *)[-*+] \[([xX ])\](.*)/g, taskList], // task lists with checkboxes (must come before regular ul lists)
   [/\n( *)(\*|-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
-  [/\n( *)([0-9]+\.)(.*)/g, olList], // ul lists
-  // [/\n[0-9]+\.(.*)/g, olList], // ol lists
+  [/\n( *)([0-9]+\.)(.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript
   [/\n-{5,}/g, '\n<hr />'], // horizontal rule
-  [
-    /( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
-    table,
-  ],
+  [/\n\[(.+?)\]\n( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g, tableWithCaption], // tables with captions
+  [/( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g, table], // regular tables
   [/\[\^([^\]]+)\](?!:)/g, footnoteReferenceReplacer], // footnote references
   [/\[\^([^\]]+)\]:\s*((?:[^\n]*\n?)*)/g, footnoteDefinitionReplacer], // footnote definitions
-  [/\n([^\n]+)\n/g, para], // add paragraphs
+  [/\n([A-Z][A-Za-z\s]*?):\s*([A-Z][^\n]*)/g, definitionList], // definition lists (Capitalized Term : Capitalized Definition)
+] as Array<[RegExp, RegexReplacer | string]>;
+
+/** Post-paragraph rules (cleanup rules that run after paragraph processing) */
+const postParaRules = [
   [/\s?<\/[ou]l>\s?<[ou]l>/g, '', 3], // fix extra ol and ul
   [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
   [/https?:\/\/[^"']*/g, cleanUpUrl], // fix em in links
@@ -272,22 +486,41 @@ export const render = (
   // Reset the storage arrays
   codeBlocks.length = 0;
   inlineCode.length = 0;
+  mathBlocks.length = 0;
+  inlineMath.length = 0;
   footnotes.length = 0;
 
-  // Extract code blocks and inline code before processing
+  // Extract code blocks, math, and inline code before processing
   markdown = extractCodeBlocks(`\n${markdown}\n`);
+  markdown = extractMathBlocks(markdown);
   markdown = extractInlineCode(markdown);
+  markdown = extractInlineMath(markdown);
 
-  // Apply markdown rules
-  rules.forEach(([regex, subst, repeat = 1]) => {
+  // Apply pre-paragraph rules
+  preParaRules.forEach(([regex, subst, repeat = 1]) => {
     for (let i = 0; i < repeat; i++) {
       markdown = markdown.replace(regex, subst as any);
     }
   });
 
-  // Restore code blocks and inline code with proper escaping
+  // Process collected list items into proper nested structure
+  markdown = processListItems(markdown);
+
+  // Apply paragraph processing
+  markdown = markdown.replace(/\n([^\n]+)\n/g, para);
+
+  // Apply post-paragraph cleanup rules
+  postParaRules.forEach(([regex, subst, repeat = 1]) => {
+    for (let i = 0; i < repeat; i++) {
+      markdown = markdown.replace(regex, subst as any);
+    }
+  });
+
+  // Restore code blocks, math, and inline code with proper escaping
   markdown = restoreCodeBlocks(markdown);
+  markdown = restoreMathBlocks(markdown);
   markdown = restoreInlineCode(markdown);
+  markdown = restoreInlineMath(markdown);
 
   // Add footnotes section if there are any footnotes
   markdown = markdown.trim() + generateFootnotesSection();
@@ -305,5 +538,5 @@ export const render = (
  * Add a new rule: The regex should be global and not use multiline mode.
  */
 export const addRule = (regex: RegExp, replacement: RegexReplacer | string) => {
-  rules.push([regex, replacement]);
+  preParaRules.push([regex, replacement]);
 };

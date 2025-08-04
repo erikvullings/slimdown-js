@@ -118,7 +118,7 @@ test('ul using *', (t) => {
 
 test('nested ul + ul', (t) => {
   const expected =
-    '<ul><li>Item 1</li><ul><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ul><li>Item 2</li><li>Item 3</li></ul>';
+    '<ul><li>Item 1<ul><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ul></li><li>Item 2</li><li>Item 3</li></ul>';
   const html = render(
     `- Item 1\n  - Item 1.1\n  - Item 1.2\n  - Item 1.3\n- Item 2\n- Item 3`,
   );
@@ -127,7 +127,7 @@ test('nested ul + ul', (t) => {
 
 test('nested ul + ol', (t) => {
   const expected =
-    '<ul><li>Item 1</li><ol><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ol><li>Item 2</li><li>Item 3</li></ul>';
+    '<ul><li>Item 1<ol><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ol></li><li>Item 2</li><li>Item 3</li></ul>';
   const html = render(
     `- Item 1\n  1. Item 1.1\n  2. Item 1.2\n  3. Item 1.3\n- Item 2\n- Item 3`,
   );
@@ -142,7 +142,7 @@ test('ol', (t) => {
 
 test('nested ol + ol', (t) => {
   const expected =
-    '<ol><li>Item 1</li><ol><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ol><li>Item 2</li><li>Item 3</li></ol>';
+    '<ol><li>Item 1<ol><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ol></li><li>Item 2</li><li>Item 3</li></ol>';
   const html = render(
     `1. Item 1\n  1. Item 1.1\n  2. Item 1.2\n  3. Item 1.3\n2. Item 2\n3. Item 3`,
   );
@@ -151,7 +151,7 @@ test('nested ol + ol', (t) => {
 
 test('nested ol + ul', (t) => {
   const expected =
-    '<ol><li>Item 1</li><ul><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ul><li>Item 2</li><li>Item 3</li></ol>';
+    '<ol><li>Item 1<ul><li>Item 1.1</li><li>Item 1.2</li><li>Item 1.3</li></ul></li><li>Item 2</li><li>Item 3</li></ol>';
   const html = render(
     `1. Item 1\n  - Item 1.1\n  - Item 1.2\n  - Item 1.3\n2. Item 2\n3. Item 3`,
   );
@@ -479,4 +479,291 @@ test('creating block quotes', (t) => {
   const expected = '<blockquote>This is a blockquoted text.</blockquote>';
   const html = render(md, true);
   t.is(html.trim(), expected);
+});
+
+test('complex nested ol with ul - continuous numbered list', (t) => {
+  const md = `1. First item
+   - Nested bullet 1
+   - Nested bullet 2
+2. Second item
+   - Another nested bullet
+3. Third item`;
+  
+  const expected = `<ol>
+  <li>First item
+    <ul>
+      <li>Nested bullet 1</li>
+      <li>Nested bullet 2</li>
+    </ul>
+  </li>
+  <li>Second item
+    <ul>
+      <li>Another nested bullet</li>
+    </ul>
+  </li>
+  <li>Third item</li>
+</ol>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('complex nested ul with ol - continuous bullet list', (t) => {
+  const md = `- First item
+  1. Nested number 1
+  2. Nested number 2
+- Second item
+  1. Another nested number
+- Third item`;
+  
+  const expected = `<ul>
+  <li>First item
+    <ol>
+      <li>Nested number 1</li>
+      <li>Nested number 2</li>
+    </ol>
+  </li>
+  <li>Second item
+    <ol>
+      <li>Another nested number</li>
+    </ol>
+  </li>
+  <li>Third item</li>
+</ul>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('triple nested lists', (t) => {
+  const md = `1. Level 1 item 1
+   - Level 2 item 1
+     1. Level 3 item 1
+     2. Level 3 item 2
+   - Level 2 item 2
+2. Level 1 item 2`;
+  
+  const expected = `<ol>
+  <li>Level 1 item 1
+    <ul>
+      <li>Level 2 item 1
+        <ol>
+          <li>Level 3 item 1</li>
+          <li>Level 3 item 2</li>
+        </ol>
+      </li>
+      <li>Level 2 item 2</li>
+    </ul>
+  </li>
+  <li>Level 1 item 2</li>
+</ol>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('real world complex nested list', (t) => {
+  const md = `1. **First Section:**
+   - **Subsection A:** Description A
+   - **Subsection B:** Description B
+
+2. **Second Section:**
+   - **Subsection C:** Description C
+   - **Subsection D:** Description D`;
+   
+  const expected = `<ol>
+  <li><strong>First Section:</strong>
+    <ul>
+      <li><strong>Subsection A:</strong> Description A</li>
+      <li><strong>Subsection B:</strong> Description B</li>
+    </ul>
+  </li>
+  <li><strong>Second Section:</strong>
+    <ul>
+      <li><strong>Subsection C:</strong> Description C</li>
+      <li><strong>Subsection D:</strong> Description D</li>
+    </ul>
+  </li>
+</ol>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+// Phase 1 feature tests
+
+test('inline math support', (t) => {
+  const md = 'The equation $E = mc^2$ is famous.';
+  const expected = '<p>The equation <span class="math-inline">E = mc^2</span> is famous.</p>';
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('block math support', (t) => {
+  const md = `Here's a block equation:
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+That's Gaussian integral.`;
+  
+  const expected = `<p>Here's a block equation:</p>
+<div class="math-block">\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}</div>
+<p>That's Gaussian integral.</p>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('task list with checked items', (t) => {
+  const md = `- [x] Completed task
+- [ ] Incomplete task
+- [X] Another completed task`;
+  
+  const expected = `<ul>
+  <li><input type="checkbox" checked disabled> Completed task</li>
+  <li><input type="checkbox" disabled> Incomplete task</li>
+  <li><input type="checkbox" checked disabled> Another completed task</li>
+</ul>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('nested task lists', (t) => {
+  const md = `- [x] Main task
+  - [ ] Subtask 1
+  - [x] Subtask 2
+- [ ] Another main task`;
+  
+  const expected = `<ul>
+  <li><input type="checkbox" checked disabled> Main task
+    <ul>
+      <li><input type="checkbox" disabled> Subtask 1</li>
+      <li><input type="checkbox" checked disabled> Subtask 2</li>
+    </ul>
+  </li>
+  <li><input type="checkbox" disabled> Another main task</li>
+</ul>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('definition lists', (t) => {
+  const md = `Technology : Computer science field
+Science : Study of natural world`;
+  
+  const expected = `<p>
+<dl><dt>Technology</dt><dd>Computer science field</dd></dl>
+</p>
+<p>
+<dl><dt>Science</dt><dd>Study of natural world</dd></dl>
+</p>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('table with column spanning', (t) => {
+  const md = `| Header 1 | Header 2|| | Header 3 |
+|----------|----------|----------|
+| Cell 1   | Spanning|| | Cell     |
+| Normal   | Cell     | Cell     |`;
+  
+  const expected = `<table><tbody>
+<tr>
+  <th>Header 1</th>
+  <th colspan="3">Header 2</th>
+  <th>Header 3</th>
+</tr>
+<tr>
+  <td>Cell 1</td>
+  <td colspan="3">Spanning</td>
+  <td>Cell</td>
+</tr>
+<tr>
+  <td>Normal</td>
+  <td>Cell</td>
+  <td>Cell</td>
+</tr>
+</tbody></table>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('table with caption', (t) => {
+  const md = `[Table Caption]
+| Name | Age |
+|------|-----|
+| John | 25  |
+| Jane | 30  |`;
+  
+  const expected = `<table><caption>Table Caption</caption><tbody>
+<tr><th>Name</th><th>Age</th></tr>
+<tr><td>John</td><td>25</td></tr>
+<tr><td>Jane</td><td>30</td></tr>
+</tbody></table>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('math expressions with special characters', (t) => {
+  const md = `Complex math: $\\sum_{i=1}^{n} x_i < \\infty$ and block math:
+
+$$
+f(x) = \\begin{cases}
+x^2 & \\text{if } x \\geq 0 \\\\
+-x^2 & \\text{if } x < 0
+\\end{cases}
+$$`;
+  
+  const expected = `<p>Complex math: <span class="math-inline">\\sum_{i=1}^{n} x_i &lt; \\infty</span> and block math:</p>
+<div class="math-block">f(x) = \\begin{cases}
+x^2 &amp; \\text{if } x \\geq 0 \\\\
+-x^2 &amp; \\text{if } x &lt; 0
+\\end{cases}</div>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('mixed content with all Phase 1 features', (t) => {
+  const md = `# Math and Tasks
+
+Here's some inline math $a^2 + b^2 = c^2$ and a task list:
+
+- [x] Learn math
+- [ ] Practice LaTeX: $\\int_0^1 x dx = \\frac{1}{2}$
+
+Technology : Computer science field
+Science : Study of natural world
+
+[Data Table]
+| Name | Score|| | Total |
+|------|------|------|
+| Test | 85   | 95   |`;
+  
+  const expected = `<h1>Math and Tasks</h1>
+<p>Here's some inline math <span class="math-inline">a^2 + b^2 = c^2</span> and a task list:</p>
+<ul>
+  <li><input type="checkbox" checked disabled> Learn math</li>
+  <li><input type="checkbox" disabled> Practice LaTeX: <span class="math-inline">\\int_0^1 x dx = \\frac{1}{2}</span></li>
+</ul>
+<p>
+<dl><dt>Technology</dt><dd>Computer science field</dd></dl>
+</p>
+<p>
+<dl><dt>Science</dt><dd>Study of natural world</dd></dl>
+</p>
+<table><caption>Data Table</caption><tbody>
+<tr><th>Name</th><th colspan="3">Score</th><th>Total</th></tr>
+<tr><td>Test</td><td>85</td><td>95</td></tr>
+</tbody></table>`;
+  
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
