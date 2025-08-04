@@ -458,7 +458,7 @@ const preParaRules = [
   [/( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g, table], // regular tables
   [/\[\^([^\]]+)\](?!:)/g, footnoteReferenceReplacer], // footnote references
   [/\[\^([^\]]+)\]:\s*((?:[^\n]*\n?)*)/g, footnoteDefinitionReplacer], // footnote definitions
-  [/\n([A-Z][A-Za-z\s]*?):\s*([A-Z][^\n]*)/g, definitionList], // definition lists (Capitalized Term : Capitalized Definition)
+  [/\n([A-Z][A-Za-z\s]*?)\s:\s*([A-Z][^\n]*)/g, definitionList], // definition lists (Capitalized Term : Capitalized Definition)
 ] as Array<[RegExp, RegexReplacer | string]>;
 
 /** Post-paragraph rules (cleanup rules that run after paragraph processing) */

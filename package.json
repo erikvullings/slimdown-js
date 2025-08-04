@@ -5,12 +5,20 @@
   "main": "dist/slimdown.cjs",
   "module": "dist/slimdown.module.mjs",
   "exports": {
-    "require": "./dist/slimdown.cjs",
-    "default": "./dist/slimdown.modern.mjs"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/slimdown.modern.mjs",
+      "require": "./dist/slimdown.cjs",
+      "default": "./dist/slimdown.modern.mjs"
+    },
+    "./package.json": "./package.json"
   },
   "unpkg": "dist/slimdown.umd.js",
+  "jsdelivr": "dist/slimdown.umd.js",
   "typings": "dist/index.d.ts",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "sideEffects": false,
   "description": "A regex-based Markdown parser.",
   "repository": {
     "type": "git",
@@ -18,11 +26,24 @@
   },
   "keywords": [
     "markdown",
-    "regex",
     "parser",
+    "regex",
     "lightweight",
-    "slim",
-    "typescript"
+    "typescript",
+    "math",
+    "tables",
+    "task-lists",
+    "commonjs",
+    "esm",
+    "browser",
+    "nodejs"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "CLAUDE.md",
+    "README.md",
+    "examples.md"
   ],
   "author": "Erik Vullings <erik.vullings@gmail.com> (http://www.tno.nl)",
   "license": "MIT",
@@ -30,11 +51,15 @@
     "url": "https://github.com/erikvullings/slimdown-js/issues"
   },
   "homepage": "https://github.com/erikvullings/slimdown-js#readme",
+  "engines": {
+    "node": ">=16"
+  },
   "scripts": {
-    "test": "ava src/slimdown.test.ts",
+    "test": "tsc && ava dist/slimdown.test.js",
     "test:watch": "ava --watch src/slimdown.test.ts",
     "clean": "rimraf .rpt2_cache dist lib",
     "build": "microbundle src/index.ts",
+    "build:check": "npm run build && node -e \"console.log('✅ CommonJS:', require('./dist/slimdown.cjs').render('# Test'))\" && node -e \"import('./dist/slimdown.modern.mjs').then(m => console.log('✅ ESM:', m.render('# Test')))\"",
     "start": "tsc -w -p tsconfig.json",
     "dry-run": "npm publish --dry-run",
     "patch": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
@@ -47,17 +72,12 @@
     "microbundle": "^0.15.1",
     "rimraf": "^6.0.1",
     "tslib": "^2.8.1",
+    "tsx": "^4.20.3",
     "typescript": "^5.9.2"
   },
   "ava": {
-    "typescript": {
-      "rewritePaths": {
-        "src/": "dist/"
-      },
-      "compile": "tsc"
-    },
     "files": [
-      "src/**/*.test.ts"
+      "dist/**/*.test.js"
     ]
   }
 }

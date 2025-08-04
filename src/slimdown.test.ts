@@ -488,7 +488,7 @@ test('complex nested ol with ul - continuous numbered list', (t) => {
 2. Second item
    - Another nested bullet
 3. Third item`;
-  
+
   const expected = `<ol>
   <li>First item
     <ul>
@@ -503,7 +503,7 @@ test('complex nested ol with ul - continuous numbered list', (t) => {
   </li>
   <li>Third item</li>
 </ol>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -515,7 +515,7 @@ test('complex nested ul with ol - continuous bullet list', (t) => {
 - Second item
   1. Another nested number
 - Third item`;
-  
+
   const expected = `<ul>
   <li>First item
     <ol>
@@ -530,7 +530,7 @@ test('complex nested ul with ol - continuous bullet list', (t) => {
   </li>
   <li>Third item</li>
 </ul>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -542,7 +542,7 @@ test('triple nested lists', (t) => {
      2. Level 3 item 2
    - Level 2 item 2
 2. Level 1 item 2`;
-  
+
   const expected = `<ol>
   <li>Level 1 item 1
     <ul>
@@ -557,7 +557,7 @@ test('triple nested lists', (t) => {
   </li>
   <li>Level 1 item 2</li>
 </ol>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -570,7 +570,7 @@ test('real world complex nested list', (t) => {
 2. **Second Section:**
    - **Subsection C:** Description C
    - **Subsection D:** Description D`;
-   
+
   const expected = `<ol>
   <li><strong>First Section:</strong>
     <ul>
@@ -585,7 +585,7 @@ test('real world complex nested list', (t) => {
     </ul>
   </li>
 </ol>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -594,7 +594,8 @@ test('real world complex nested list', (t) => {
 
 test('inline math support', (t) => {
   const md = 'The equation $E = mc^2$ is famous.';
-  const expected = '<p>The equation <span class="math-inline">E = mc^2</span> is famous.</p>';
+  const expected =
+    '<p>The equation <span class="math-inline">E = mc^2</span> is famous.</p>';
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -607,11 +608,11 @@ $$
 $$
 
 That's Gaussian integral.`;
-  
+
   const expected = `<p>Here's a block equation:</p>
 <div class="math-block">\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}</div>
 <p>That's Gaussian integral.</p>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -620,13 +621,13 @@ test('task list with checked items', (t) => {
   const md = `- [x] Completed task
 - [ ] Incomplete task
 - [X] Another completed task`;
-  
+
   const expected = `<ul>
   <li><input type="checkbox" checked disabled> Completed task</li>
   <li><input type="checkbox" disabled> Incomplete task</li>
   <li><input type="checkbox" checked disabled> Another completed task</li>
 </ul>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -636,7 +637,7 @@ test('nested task lists', (t) => {
   - [ ] Subtask 1
   - [x] Subtask 2
 - [ ] Another main task`;
-  
+
   const expected = `<ul>
   <li><input type="checkbox" checked disabled> Main task
     <ul>
@@ -646,7 +647,7 @@ test('nested task lists', (t) => {
   </li>
   <li><input type="checkbox" disabled> Another main task</li>
 </ul>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -654,14 +655,39 @@ test('nested task lists', (t) => {
 test('definition lists', (t) => {
   const md = `Technology : Computer science field
 Science : Study of natural world`;
-  
+
   const expected = `<p>
 <dl><dt>Technology</dt><dd>Computer science field</dd></dl>
 </p>
 <p>
 <dl><dt>Science</dt><dd>Study of natural world</dd></dl>
 </p>`;
-  
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('no definition lists for regular colons', (t) => {
+  const md = `Technology: Computer science field
+
+Science: Study of natural world`;
+
+  const expected = `<p>
+Technology: Computer science field
+</p>
+<p>
+Science:Study of natural world
+</p>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('no definition lists for math', (t) => {
+  const md = `$15 : 3 = 5$`;
+
+  const expected = `<p><span class="math-inline">15 : 3 = 5</span></p>`;
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -671,7 +697,7 @@ test('table with column spanning', (t) => {
 |----------|----------|----------|
 | Cell 1   | Spanning|| | Cell     |
 | Normal   | Cell     | Cell     |`;
-  
+
   const expected = `<table><tbody>
 <tr>
   <th>Header 1</th>
@@ -689,7 +715,7 @@ test('table with column spanning', (t) => {
   <td>Cell</td>
 </tr>
 </tbody></table>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -700,13 +726,13 @@ test('table with caption', (t) => {
 |------|-----|
 | John | 25  |
 | Jane | 30  |`;
-  
+
   const expected = `<table><caption>Table Caption</caption><tbody>
 <tr><th>Name</th><th>Age</th></tr>
 <tr><td>John</td><td>25</td></tr>
 <tr><td>Jane</td><td>30</td></tr>
 </tbody></table>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -720,13 +746,13 @@ x^2 & \\text{if } x \\geq 0 \\\\
 -x^2 & \\text{if } x < 0
 \\end{cases}
 $$`;
-  
+
   const expected = `<p>Complex math: <span class="math-inline">\\sum_{i=1}^{n} x_i &lt; \\infty</span> and block math:</p>
 <div class="math-block">f(x) = \\begin{cases}
 x^2 &amp; \\text{if } x \\geq 0 \\\\
 -x^2 &amp; \\text{if } x &lt; 0
 \\end{cases}</div>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -746,7 +772,7 @@ Science : Study of natural world
 | Name | Score|| | Total |
 |------|------|------|
 | Test | 85   | 95   |`;
-  
+
   const expected = `<h1>Math and Tasks</h1>
 <p>Here's some inline math <span class="math-inline">a^2 + b^2 = c^2</span> and a task list:</p>
 <ul>
@@ -763,7 +789,7 @@ Science : Study of natural world
 <tr><th>Name</th><th colspan="3">Score</th><th>Total</th></tr>
 <tr><td>Test</td><td>85</td><td>95</td></tr>
 </tbody></table>`;
-  
+
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
