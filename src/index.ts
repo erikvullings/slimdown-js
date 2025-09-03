@@ -449,7 +449,7 @@ const preParaRules = [
   [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
   [/\n( *)[-*+] \[([xX ])\](.*)/g, taskList], // task lists with checkboxes (must come before regular ul lists)
   [/\n( *)(\*|-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
-  [/\n( *)([0-9]+\.)(.*)/g, olList], // ol lists
+  [/\n( *)([0-9]+\.) (.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript

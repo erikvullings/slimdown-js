@@ -793,3 +793,29 @@ Science : Study of natural world
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
+
+test('decimal numbers should not be converted to ordered lists', (t) => {
+  const md = '100.000-1.000.000';
+  const expected = '<p>100.000-1.000.000</p>';
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('mix of decimal numbers and actual ordered list', (t) => {
+  const md = `100.000-1.000.000
+
+1. This is a real list item
+2. This is another real list item
+
+Price range: 50.99-99.99`;
+
+  const expected = `<p>100.000-1.000.000</p>
+<ol>
+  <li>This is a real list item</li>
+  <li>This is another real list item</li>
+</ol>
+<p>Price range: 50.99-99.99</p>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
