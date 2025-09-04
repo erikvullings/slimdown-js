@@ -692,6 +692,34 @@ test('no definition lists for math', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('table with empty cells not merged', (t) => {
+  const md = `| Header 1 | Header 2 | Header 3 |
+|----------|----------|----------|
+| Value    |          | End      |
+|          | Middle   |          |`;
+
+  const expected = `<table><tbody>
+<tr>
+  <th>Header 1</th>
+  <th>Header 2</th>
+  <th>Header 3</th>
+</tr>
+<tr>
+  <td>Value</td>
+  <td></td>
+  <td>End</td>
+</tr>
+<tr>
+  <td></td>
+  <td>Middle</td>
+  <td></td>
+</tr>
+</tbody></table>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
 test('table with column spanning', (t) => {
   const md = `| Header 1 | Header 2|| | Header 3 |
 |----------|----------|----------|

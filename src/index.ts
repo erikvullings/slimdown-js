@@ -55,7 +55,7 @@ const esc = (s: string): string =>
 
 const para = (_: string, line: string) => {
   const trimmed = line.trim();
-  return /^<\/?(ul|ol|li|h|p|bl|table|tr|td)/i.test(trimmed)
+  return /^<\/?(ul|ol|li|h|p|bl|table|tbody|tr|td|th|caption)/i.test(trimmed) || trimmed === ''
     ? `\n${line}\n`
     : `\n<p>\n${trimmed}\n</p>\n`;
 };
@@ -91,7 +91,9 @@ const taskList = (
 ) => {
   const level = Math.floor(indent.length / 2);
   const checked = checkboxState.toLowerCase() === 'x';
-  const checkboxHtml = `<input type="checkbox"${checked ? ' checked' : ''} disabled>`;
+  const checkboxHtml = `<input type="checkbox"${
+    checked ? ' checked' : ''
+  } disabled>`;
   return `\n{{LISTITEM:ul:${level}:${checkboxHtml} ${item.trim()}}}\n`;
 };
 
@@ -102,12 +104,24 @@ const definitionList = (_: string, term: string, definition: string) => {
 // Function to process list items into proper nested HTML
 const processListItems = (markdown: string): string => {
   if (!markdown.includes('{{LISTITEM:')) return markdown;
-  
+
   // Find groups of consecutive list items separated by non-list content
   const lines = markdown.split('\n');
-  const groups: Array<Array<{type: 'ul' | 'ol', level: number, content: string, originalLine: string}>> = [];
-  let currentGroup: Array<{type: 'ul' | 'ol', level: number, content: string, originalLine: string}> = [];
-  
+  const groups: Array<
+    Array<{
+      type: 'ul' | 'ol';
+      level: number;
+      content: string;
+      originalLine: string;
+    }>
+  > = [];
+  let currentGroup: Array<{
+    type: 'ul' | 'ol';
+    level: number;
+    content: string;
+    originalLine: string;
+  }> = [];
+
   for (const line of lines) {
     const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):(.+)\}\}/);
     if (listMatch) {
@@ -115,7 +129,7 @@ const processListItems = (markdown: string): string => {
         type: listMatch[1] as 'ul' | 'ol',
         level: parseInt(listMatch[2]),
         content: listMatch[3],
-        originalLine: line
+        originalLine: line,
       });
     } else if (line.trim() !== '') {
       // Non-empty, non-list line - end current group
@@ -126,42 +140,50 @@ const processListItems = (markdown: string): string => {
     }
     // Empty lines don't break list groups
   }
-  
+
   // Add final group if any
   if (currentGroup.length > 0) {
     groups.push(currentGroup);
   }
-  
+
   if (groups.length === 0) return markdown;
-  
+
   // Process each group separately
   for (const group of groups) {
     const html = buildNestedList(group);
-    
+
     // Replace first item in group with the complete HTML
     const firstItem = group[0];
     markdown = markdown.replace(firstItem.originalLine, html);
-    
+
     // Remove remaining items in group
     for (let i = 1; i < group.length; i++) {
       markdown = markdown.replace(group[i].originalLine, '');
     }
   }
-  
+
   return markdown;
 };
 
 // Build nested HTML from a group of list items
-const buildNestedList = (listItems: Array<{type: 'ul' | 'ol', level: number, content: string, originalLine: string}>): string => {
+const buildNestedList = (
+  listItems: Array<{
+    type: 'ul' | 'ol';
+    level: number;
+    content: string;
+    originalLine: string;
+  }>,
+): string => {
   if (listItems.length === 0) return '';
-  
+
   let html = '';
-  const stack: Array<{type: 'ul' | 'ol', level: number, hasOpenLi: boolean}> = [];
-  
+  const stack: Array<{ type: 'ul' | 'ol'; level: number; hasOpenLi: boolean }> =
+    [];
+
   for (let i = 0; i < listItems.length; i++) {
     const item = listItems[i];
     const nextItem = i < listItems.length - 1 ? listItems[i + 1] : null;
-    
+
     // Close lists that are deeper than current level
     while (stack.length > 0 && stack[stack.length - 1].level > item.level) {
       const last = stack.pop()!;
@@ -170,41 +192,47 @@ const buildNestedList = (listItems: Array<{type: 'ul' | 'ol', level: number, con
       }
       html += `</${last.type}>`;
     }
-    
+
     // Close current list if switching types at same level
-    if (stack.length > 0 && 
-        stack[stack.length - 1].level === item.level && 
-        stack[stack.length - 1].type !== item.type) {
+    if (
+      stack.length > 0 &&
+      stack[stack.length - 1].level === item.level &&
+      stack[stack.length - 1].type !== item.type
+    ) {
       const last = stack.pop()!;
       if (last.hasOpenLi) {
         html += '</li>';
       }
       html += `</${last.type}>`;
     }
-    
+
     // Open new list if needed
     if (stack.length === 0 || stack[stack.length - 1].level < item.level) {
       html += `<${item.type}>`;
-      stack.push({type: item.type, level: item.level, hasOpenLi: false});
+      stack.push({ type: item.type, level: item.level, hasOpenLi: false });
     }
-    
+
     // Close previous li at same level if needed
-    if (stack.length > 0 && stack[stack.length - 1].hasOpenLi && stack[stack.length - 1].level === item.level) {
+    if (
+      stack.length > 0 &&
+      stack[stack.length - 1].hasOpenLi &&
+      stack[stack.length - 1].level === item.level
+    ) {
       html += '</li>';
       stack[stack.length - 1].hasOpenLi = false;
     }
-    
+
     // Add list item
     html += `<li>${item.content}`;
     stack[stack.length - 1].hasOpenLi = true;
-    
+
     // Close li if next item is not deeper
     if (!nextItem || nextItem.level <= item.level) {
       html += '</li>';
       stack[stack.length - 1].hasOpenLi = false;
     }
   }
-  
+
   // Close remaining lists
   while (stack.length > 0) {
     const last = stack.pop()!;
@@ -213,7 +241,7 @@ const buildNestedList = (listItems: Array<{type: 'ul' | 'ol', level: number, con
     }
     html += `</${last.type}>`;
   }
-  
+
   return html;
 };
 
@@ -256,7 +284,12 @@ const generateFootnotesSection = () => {
 </div>`;
 };
 
-const table = (_: string, headers: string, format: string, content: string = '') => {
+const table = (
+  _: string,
+  headers: string,
+  format: string,
+  content: string = '',
+) => {
   const align = format
     .split('|')
     .filter((__, i, arr) => i > 0 && i < arr.length - 1)
@@ -269,67 +302,122 @@ const table = (_: string, headers: string, format: string, content: string = '')
         ? 'left'
         : '',
     );
+
+  // Return attribute string (keeps compatibility with original code's template)
   const td = (col: number) => {
     const a = align[col];
     return a ? ` align="${a}"` : '';
   };
-  const headerCells = headers
-    .split('|')
-    .filter((__, i, arr) => i > 0 && i < arr.length - 1)
-    .map((hd) => hd.trim());
-    
-  const headerResults = [];
+
+  // Parse header cells (keep both raw and trimmed for emptiness checks)
+  const rawHeaderCells = headers.split('|').slice(1, -1); // remove first and last empty elements
+  const headerCells = rawHeaderCells.map((hd) => hd.trim());
+
+  const headerResults: string[] = [];
   let skipNext = 0;
-  
+
   for (let i = 0; i < headerCells.length; i++) {
     if (skipNext > 0) {
       skipNext--;
       continue;
     }
-    
+
     const hd = headerCells[i];
-    if (hd.trim()) {
-      // Count consecutive empty cells after this one to determine span
+    const rawHd = rawHeaderCells[i];
+    
+    if (hd && hd.length) {
+      // count how many consecutive empty header cells follow -> colspan
+      // Only do colspan if there's at least one truly empty cell (from ||) in the sequence
       let spanCount = 1;
-      for (let j = i + 1; j < headerCells.length && (!headerCells[j] || headerCells[j].trim() === ''); j++) {
-        spanCount++;
+      let hasTrulyEmptyCell = false;
+      
+      // Check if there are any truly empty cells following this cell
+      for (let j = i + 1; j < headerCells.length && headerCells[j].length === 0; j++) {
+        if (rawHeaderCells[j] === '') {
+          hasTrulyEmptyCell = true;
+          break;
+        }
       }
+      
+      // Only count consecutive empty cells for colspan if we found truly empty cells
+      if (hasTrulyEmptyCell) {
+        for (
+          let j = i + 1;
+          j < headerCells.length && headerCells[j].length === 0;
+          j++
+        ) {
+          spanCount++;
+        }
+      }
+
       if (spanCount > 1) {
         skipNext = spanCount - 1;
         headerResults.push(`<th${td(i)} colspan="${spanCount}">${hd}</th>`);
       } else {
         headerResults.push(`<th${td(i)}>${hd}</th>`);
       }
+    } else {
+      // Check if this is a truly empty cell (from ||) or just whitespace
+      if (rawHd === '') {
+        // This is a truly empty cell that should be skipped for colspan
+        // But if we reach here, it means it wasn't part of a colspan, so render empty th
+        headerResults.push(`<th${td(i)}></th>`);
+      } else {
+        // This is a whitespace-only cell that should remain as individual cell
+        headerResults.push(`<th${td(i)}></th>`);
+      }
     }
   }
-    
-  const h = `<tr>${headerResults.join('')}</tr>`;
+
+  const h = `<tr>\n  ${headerResults.join('\n  ')}\n</tr>\n`;
+
+  // body rows
   const rows = content
     .split('\n')
     .map((row) => row.trim())
     .filter((row) => row && row.length);
+
   const c = rows
     .map((row) => {
-      const cells = row
-        .split('|')
-        .filter((__, i, arr) => i > 0 && i < arr.length - 1)
-        .map((cell) => cell.trim());
-        
-      const cellResults = [];
+      // Split by | but keep track of truly empty cells (from ||)
+      const rawCells = row.split('|').slice(1, -1); // remove first and last empty elements
+      const cells = rawCells.map((cell) => cell.trim());
+
+      const cellResults: string[] = [];
       let skipNext = 0;
-      
+
       for (let i = 0; i < cells.length; i++) {
         if (skipNext > 0) {
           skipNext--;
           continue;
         }
-        
+
         const cell = cells[i];
-        if (cell.trim()) {
-          // Count consecutive empty cells after this one to determine span
+        const rawCell = rawCells[i];
+        
+        if (cell && cell.length) {
+          // Count consecutive empty cells after this one -> colspan
+          // Only do colspan if there's at least one truly empty cell (from ||) in the sequence
           let spanCount = 1;
-          for (let j = i + 1; j < cells.length && (!cells[j] || cells[j].trim() === ''); j++) {
-            spanCount++;
+          let hasTrulyEmptyCell = false;
+          
+          // Check if there are any truly empty cells following this cell
+          for (let j = i + 1; j < cells.length && cells[j].length === 0; j++) {
+            if (rawCells[j] === '') {
+              hasTrulyEmptyCell = true;
+              break;
+            }
+          }
+          
+          // Only count consecutive empty cells for colspan if we found truly empty cells
+          if (hasTrulyEmptyCell) {
+            for (
+              let j = i + 1;
+              j < cells.length && cells[j].length === 0;
+              j++
+            ) {
+              spanCount++;
+            }
           }
           if (spanCount > 1) {
             skipNext = spanCount - 1;
@@ -337,20 +425,41 @@ const table = (_: string, headers: string, format: string, content: string = '')
           } else {
             cellResults.push(`<td${td(i)}>${cell}</td>`);
           }
+        } else {
+          // Check if this is a truly empty cell (from ||) or just whitespace
+          if (rawCell === '') {
+            // This is a truly empty cell that should be skipped for colspan
+            // But if we reach here, it means it wasn't part of a colspan, so render empty td
+            cellResults.push(`<td${td(i)}></td>`);
+          } else {
+            // This is a whitespace-only cell that should remain as individual cell
+            cellResults.push(`<td${td(i)}></td>`);
+          }
         }
       }
-      
-      return `<tr>${cellResults.join('')}</tr>`;
+
+      return `<tr>\n  ${cellResults.join('\n  ')}\n</tr>\n`;
     })
     .join('');
+
+  // keep the original surrounding newlines/structure to stay compatible
   return `\n<table><tbody>${h}${c}</tbody></table>\n`;
 };
 
 // Enhanced table with caption support
-const tableWithCaption = (_: string, caption: string, headers: string, format: string, content: string = '') => {
+const tableWithCaption = (
+  _: string,
+  caption: string,
+  headers: string,
+  format: string,
+  content: string = '',
+) => {
   const tableHtml = table(_, headers, format, content);
   // Insert caption after <table> tag
-  return tableHtml.replace('<table>', `<table><caption>${caption.trim()}</caption>`);
+  return tableHtml.replace(
+    '<table>',
+    `<table><caption>${caption.trim()}</caption>`,
+  );
 };
 
 const cleanUpUrl = (link: string) => link.replace(/<\/?em>/g, '_');
@@ -400,13 +509,10 @@ const restoreInlineCode = (markdown: string): string => {
 
 // Function to extract and store math blocks
 const extractMathBlocks = (markdown: string): string => {
-  return markdown.replace(
-    /\n\s*\$\$([^]*?)\$\$\s*\n/g,
-    (_match, math) => {
-      mathBlocks.push(math.trim());
-      return `\n{{MATHBLOCKPH${mathBlocks.length - 1}}}\n`;
-    },
-  );
+  return markdown.replace(/\n\s*\$\$([^]*?)\$\$\s*\n/g, (_match, math) => {
+    mathBlocks.push(math.trim());
+    return `\n{{MATHBLOCKPH${mathBlocks.length - 1}}}\n`;
+  });
 };
 
 // Function to extract and store inline math
@@ -419,13 +525,10 @@ const extractInlineMath = (markdown: string): string => {
 
 // Function to restore math blocks
 const restoreMathBlocks = (markdown: string): string => {
-  return markdown.replace(
-    /{{MATHBLOCKPH(\d+)}}/g,
-    (_match, index) => {
-      const math = mathBlocks[parseInt(index)];
-      return `<div class="math-block">${esc(math)}</div>`;
-    },
-  );
+  return markdown.replace(/{{MATHBLOCKPH(\d+)}}/g, (_match, index) => {
+    const math = mathBlocks[parseInt(index)];
+    return `<div class="math-block">${esc(math)}</div>`;
+  });
 };
 
 // Function to restore inline math
@@ -454,8 +557,14 @@ const preParaRules = [
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript
   [/\n-{5,}/g, '\n<hr />'], // horizontal rule
-  [/\n\[(.+?)\]\n( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g, tableWithCaption], // tables with captions
-  [/( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g, table], // regular tables
+  [
+    /\n\[(.+?)\]\n( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
+    tableWithCaption,
+  ], // tables with captions
+  [
+    /( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
+    table,
+  ], // regular tables
   [/\[\^([^\]]+)\](?!:)/g, footnoteReferenceReplacer], // footnote references
   [/\[\^([^\]]+)\]:\s*((?:[^\n]*\n?)*)/g, footnoteDefinitionReplacer], // footnote definitions
   [/\n([A-Z][A-Za-z\s]*?)\s:\s*([A-Z][^\n]*)/g, definitionList], // definition lists (Capitalized Term : Capitalized Definition)
