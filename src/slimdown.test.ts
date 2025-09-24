@@ -847,3 +847,77 @@ Price range: 50.99-99.99`;
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
+
+test('horizontal rule with three dashes', (t) => {
+  const expected = '<p>before</p>\n<hr />\n<p>after</p>';
+  const html = render('before\n\n---\n\nafter');
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('horizontal rule variations', (t) => {
+  const expected1 = '<p>text</p>\n<hr />\n<p>more</p>';
+  const html1 = render('text\n\n---\n\nmore');
+  t.is(removeWhitespaces(html1), removeWhitespaces(expected1));
+
+  const expected2 = '<p>text</p>\n<hr />\n<p>more</p>';
+  const html2 = render('text\n\n----\n\nmore');
+  t.is(removeWhitespaces(html2), removeWhitespaces(expected2));
+
+  const expected3 = '<p>text</p>\n<hr />\n<p>more</p>';
+  const html3 = render('text\n\n-----\n\nmore');
+  t.is(removeWhitespaces(html3), removeWhitespaces(expected3));
+});
+
+test('mixed ordered and unordered lists with text after', (t) => {
+  const md = `1. First item
+2. Second item
+3. Third item
+
+- Unordered item
+- Another item
+- Last item
+
+More text`;
+
+  const expected = `<ol>
+  <li>First item</li>
+  <li>Second item</li>
+  <li>Third item</li>
+</ol>
+<ul>
+  <li>Unordered item</li>
+  <li>Another item</li>
+  <li>Last item</li>
+</ul>
+<p>More text</p>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('mixed unordered and ordered lists', (t) => {
+  const md = `- First bullet
+- Second bullet
+
+1. First number
+2. Second number
+
+- Back to bullets
+- Another bullet`;
+
+  const expected = `<ul>
+  <li>First bullet</li>
+  <li>Second bullet</li>
+</ul>
+<ol>
+  <li>First number</li>
+  <li>Second number</li>
+</ol>
+<ul>
+  <li>Back to bullets</li>
+  <li>Another bullet</li>
+</ul>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});

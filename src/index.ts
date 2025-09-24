@@ -122,23 +122,42 @@ const processListItems = (markdown: string): string => {
     originalLine: string;
   }> = [];
 
+  let hasEmptyLineSinceLastItem = false;
+
   for (const line of lines) {
     const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):(.+)\}\}/);
     if (listMatch) {
+      const itemType = listMatch[1] as 'ul' | 'ol';
+      const itemLevel = parseInt(listMatch[2]);
+
+      // Check if we should break the group due to type change after empty line
+      if (hasEmptyLineSinceLastItem && currentGroup.length > 0) {
+        const lastItem = currentGroup[currentGroup.length - 1];
+        // Break group if type changes at the same level after empty line
+        if (lastItem.type !== itemType && lastItem.level === itemLevel) {
+          groups.push([...currentGroup]);
+          currentGroup = [];
+        }
+      }
+
       currentGroup.push({
-        type: listMatch[1] as 'ul' | 'ol',
-        level: parseInt(listMatch[2]),
+        type: itemType,
+        level: itemLevel,
         content: listMatch[3],
         originalLine: line,
       });
+      hasEmptyLineSinceLastItem = false;
     } else if (line.trim() !== '') {
       // Non-empty, non-list line - end current group
       if (currentGroup.length > 0) {
         groups.push([...currentGroup]);
         currentGroup = [];
       }
+      hasEmptyLineSinceLastItem = false;
+    } else if (line.trim() === '') {
+      // Empty line
+      hasEmptyLineSinceLastItem = true;
     }
-    // Empty lines don't break list groups
   }
 
   // Add final group if any
@@ -550,13 +569,13 @@ const preParaRules = [
   [/\\_/g, '&#95;'], // underscores part 1
   [/\~\~(.*?)\~\~/g, '<del>$1</del>'], // del
   [/\:\"(.*?)\"\:/g, '<q>$1</q>'], // quote
+  [/\n-{3,}/g, '\n<hr />'], // horizontal rule (must come before ul lists)
   [/\n( *)[-*+] \[([xX ])\](.*)/g, taskList], // task lists with checkboxes (must come before regular ul lists)
   [/\n( *)(\*|-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
   [/\n( *)([0-9]+\.) (.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript
-  [/\n-{5,}/g, '\n<hr />'], // horizontal rule
   [
     /\n\[(.+?)\]\n( *\|[^\n]+\|\r?\n)((?: *\|:?[ -]+:?)+ *\|)(\n(?: *\|[^\n]+\|\r?\n?)*)?/g,
     tableWithCaption,
