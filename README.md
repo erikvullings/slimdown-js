@@ -72,10 +72,12 @@ const html: string = render('# TypeScript Example');
 
 ### Browser (CDN)
 
+See the example [here](https://flems.io/#0=N4IgzgpgNhDGAuEAmIBcIB0ALeBbKIANCAGYCWMYaA2qAHYCGuEamO+RIsA9nYn6wA8AQgAiAeQDCAFQCaABQCiAAnZQAfAB06gtcqgM6AcwC8mkBDrmtOrBAZIby5YObwGy2FgYAnSPDMQAFVpADEAWgAOc2UAeicXNw9GZkCANzIIAHcAB24feBiePksA8yyyJHgsEyQIDNgIcIqqrEJlMjoyeDIGKHCwWD6IEwBGDAAGGPjtZ0FBnzIc+GUwH1hAnHgcsFRY2IBXOhyAayMMHlxYsCgyXCRuLLpwgCswa0Fr2EXlm0+7Bx-ABG3CQAE8EoIkGQ0h0kIEcgZGlhuFA6j4PrFoWkbNp5t8lvAEsUwCtEQxkaj0coTMoHrADsw+BgjBB4IoYEz4AAhMEASSQAAoAOTkyloiA+YUASgA3LNPLwwKiIBgoNwjIKxRAURKfNKFdrdeiMJ06JKABLSACyABkacoKnQHlkMDc7i66AApMAYHyWdEigDEym5PkekB8ykUAA8mIiIJptEm6BbHspfBBlAB9MHcA7Z5TwUEMMEAfhl8p0Xx+ROT1ZB4JsnEgMAQZCVrFGAGZUABOABMIAAvoR6EwWOgMG9OMV+PBWCOxyAUpPMLAwFRiHPSovhwBdYdAA)
+
 ```html
-<script src="https://unpkg.com/slimdown-js/dist/slimdown.umd.js"></script>
+<script src="https://unpkg.com/slimdown-js"></script>
 <script>
-  const html = SlimdownJs.render('# Browser Example');
+  const html = window.slimdownJs.render('# Browser Example');
 </script>
 ```
 
