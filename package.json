@@ -3,13 +3,13 @@
   "version": "1.1.3",
   "source": "src/index.ts",
   "main": "dist/slimdown.cjs",
-  "module": "dist/slimdown.module.mjs",
+  "module": "dist/slimdown.mjs",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/slimdown.modern.mjs",
+      "import": "./dist/slimdown.mjs",
       "require": "./dist/slimdown.cjs",
-      "default": "./dist/slimdown.modern.mjs"
+      "default": "./dist/slimdown.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -57,9 +57,9 @@
   "scripts": {
     "test": "tsc && ava dist/slimdown.test.js",
     "test:watch": "ava --watch src/slimdown.test.ts",
-    "clean": "rimraf .rpt2_cache dist lib",
-    "build": "microbundle src/index.ts",
-    "build:check": "npm run build && node -e \"console.log('✅ CommonJS:', require('./dist/slimdown.cjs').render('# Test'))\" && node -e \"import('./dist/slimdown.modern.mjs').then(m => console.log('✅ ESM:', m.render('# Test')))\"",
+    "clean": "rimraf dist lib",
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "build:check": "npm run build && node -e \"console.log('✅ CommonJS:', require('./dist/slimdown.cjs').render('# Test'))\" && node -e \"import('./dist/slimdown.mjs').then(m => console.log('✅ ESM:', m.render('# Test')))\"",
     "start": "tsc -w -p tsconfig.json",
     "dry-run": "npm publish --dry-run",
     "patch": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
@@ -68,12 +68,12 @@
   },
   "devDependencies": {
     "@ava/typescript": "^6.0.0",
-    "ava": "^6.4.1",
-    "microbundle": "^0.15.1",
-    "rimraf": "^6.0.1",
+    "ava": "^7.0.0",
+    "rimraf": "^6.1.3",
     "tslib": "^2.8.1",
-    "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
   },
   "ava": {
     "files": [
