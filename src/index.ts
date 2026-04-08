@@ -32,7 +32,7 @@ export type RegexReplacer = (substring: string, ...args: any[]) => string;
  */
 
 // Store code blocks temporarily to prevent markdown processing within them
-const codeBlocks: string[] = [];
+const codeBlocks: Array<{ lang: string; code: string }> = [];
 const inlineCode: string[] = [];
 // Store math expressions to prevent markdown processing within them
 const mathBlocks: string[] = [];
@@ -491,9 +491,9 @@ const header = (_: string, match: string, h = '') => {
 // Function to extract and store code blocks
 const extractCodeBlocks = (markdown: string): string => {
   return markdown.replace(
-    /\n\s*```\w*\n([^]*?)\n\s*```\s*\n/g,
-    (_match, code) => {
-      codeBlocks.push(code);
+    /\n\s*```(\w*)\n([^]*?)\n\s*```\s*\n/g,
+    (_match, lang, code) => {
+      codeBlocks.push({ lang, code });
       return `\n<pre>{{CODEBLOCKPH${codeBlocks.length - 1}}}</pre>\n`;
     },
   );
@@ -512,8 +512,9 @@ const restoreCodeBlocks = (markdown: string): string => {
   return markdown.replace(
     /<pre>{{CODEBLOCKPH(\d+)}}<\/pre>/g,
     (_match, index) => {
-      const code = codeBlocks[parseInt(index)];
-      return `<pre>${esc(code)}</pre>`;
+      const { lang, code } = codeBlocks[parseInt(index)];
+      const classAttr = lang ? ` class="language-${lang}"` : '';
+      return `<pre><code${classAttr}>${esc(code)}</code></pre>`;
     },
   );
 };
@@ -562,8 +563,10 @@ const restoreInlineMath = (markdown: string): string => {
 const preParaRules = [
   [/\r\n/g, '\n'], // Remove \r
   [/\n(#+)(.*)/g, header], // headers
+  [/<(https?:\/\/[^\s>]+)>/g, '<a href="$1">$1</a>'], // autolinks
   [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
   [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href="$2">$1</a>'], // links
+  [/([^\s]) {2,}\n/g, '$1<br>\n'], // hard line breaks (two+ trailing spaces after non-whitespace)
   [/([^\\])(\*\*|__)(.*?(_|\*)?)\2/g, '$1<strong>$3</strong>'], // bold
   [/([^\\])(\*|_)(.*?)\2/g, '$1<em>$3</em>'], // emphasis
   [/\\_/g, '&#95;'], // underscores part 1
@@ -597,20 +600,39 @@ const postParaRules = [
   [/&#95;/g, '_'], // underscores part 2
 ] as Array<[RegExp, RegexReplacer | string]>;
 
+/** Options for the {@link render} function. */
+export interface RenderOptions {
+  /** If true, remove the `<p>...</p>` wrapper around top-level paragraphs. Default: false. */
+  removeParagraphs?: boolean;
+  /** If true, add `target="_blank"` to all links. Default: false. */
+  externalLinks?: boolean;
+}
+
 /**
  * Render Markdown text into HTML.
  *
  * @param markdown Markdown text
- * @param removeParagraphs If true (default false), remove the \<p\>...\</p\> around paragraphs
- * @param externalLinks If true (default false), replace \<a href...\> with \<a taget="_blank" href...\>
- * to open them in a new page
- * @returns
+ * @param optionsOrRemoveParagraphs Either a {@link RenderOptions} object, or a boolean to remove
+ * the `<p>` wrapper around paragraphs (legacy positional form).
+ * @param externalLinks If true (default false), add `target="_blank"` to all links.
+ * Only used when the second argument is a boolean (legacy form).
  */
-export const render = (
+export function render(markdown: string, options?: RenderOptions): string;
+export function render(markdown: string, removeParagraphs?: boolean, externalLinks?: boolean): string;
+export function render(
   markdown: string,
-  removeParagraphs = false,
-  externalLinks = false,
-) => {
+  optionsOrRemoveParagraphs: RenderOptions | boolean = false,
+  externalLinksArg = false,
+) {
+  let removeParagraphs: boolean;
+  let externalLinks: boolean;
+  if (typeof optionsOrRemoveParagraphs === 'object') {
+    removeParagraphs = optionsOrRemoveParagraphs.removeParagraphs ?? false;
+    externalLinks = optionsOrRemoveParagraphs.externalLinks ?? false;
+  } else {
+    removeParagraphs = optionsOrRemoveParagraphs;
+    externalLinks = externalLinksArg;
+  }
   // Reset the storage arrays
   codeBlocks.length = 0;
   inlineCode.length = 0;
@@ -660,7 +682,7 @@ export const render = (
     markdown = markdown.replace(/<a href="/g, '<a target="_blank" href="');
   }
   return markdown;
-};
+}
 
 /**
  * Add a new rule: The regex should be global and not use multiline mode.

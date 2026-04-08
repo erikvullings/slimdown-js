@@ -75,13 +75,13 @@ test('code', (t) => {
 });
 
 test('multiline codeblock', (t) => {
-  const expected = `<pre>## Table example
+  const expected = `<pre><code class="language-md">## Table example
 
 | Tables        | Are           | Cool  |
 |---------------|:-------------:|------:|
 | col 3 is      | right-aligned | $1600 |
 | col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |</pre>`;
+| zebra stripes | are neat      |    $1 |</code></pre>`;
   const html = render(`
 \`\`\`md
 
@@ -313,7 +313,7 @@ Tab indented
 codeblock
 \`\`\`
 `;
-  const expected = `<h1>Code example</h1><pre>Tab indented codeblock</pre>`;
+  const expected = `<h1>Code example</h1><pre><code>Tab indented codeblock</code></pre>`;
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
@@ -920,4 +920,36 @@ test('mixed unordered and ordered lists', (t) => {
 
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('code block with language class', (t) => {
+  const md = "```js\nconsole.log('hi');\n```\n";
+  const html = render(md);
+  t.true(html.includes('<code class="language-js">'));
+  t.true(html.includes('console.log(&#39;hi&#39;);'));
+});
+
+test('code block without language has no class', (t) => {
+  const md = "```\nplain code\n```\n";
+  const html = render(md);
+  t.true(html.includes('<code>plain code</code>'));
+});
+
+test('hard line breaks', (t) => {
+  const md = 'first line  \nsecond line';
+  const html = render(md, true);
+  t.true(html.includes('<br>'));
+  t.true(html.includes('second line'));
+});
+
+test('autolinks', (t) => {
+  const html = render('<https://example.com>', true);
+  t.is(removeWhitespaces(html), removeWhitespaces('<a href="https://example.com">https://example.com</a>'));
+});
+
+test('render with RenderOptions object', (t) => {
+  const md = 'Hello [link](https://example.com)';
+  const html = render(md, { removeParagraphs: true, externalLinks: true });
+  t.true(html.includes('target="_blank"'));
+  t.false(html.includes('<p>'));
 });

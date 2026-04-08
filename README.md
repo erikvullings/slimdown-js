@@ -1,5 +1,8 @@
 # slimdown-js
 
+[![npm](https://img.shields.io/npm/v/slimdown-js)](https://www.npmjs.com/package/slimdown-js)
+[![Bundle size](https://img.shields.io/bundlephobia/minzip/slimdown-js)](https://bundlephobia.com/package/slimdown-js)
+
 A basic regex-based Markdown parser based on the gist by [Johnny Broadway](https://gist.github.com/jbroadway/2836900), converted from PHP to TypeScript, extended with several additional elements (images, tables, code blocks, underscores) and published to `npm`.
 
 Inspired by:
@@ -29,6 +32,9 @@ Supports the following elements (and can be extended via `addRule(regexp: RegExp
 - Ordered/unordered lists (up to three levels deep, may be nested)
 - Superscript and subscript (`z~1~` or `a^2^`)
 - Footnotes, e.g. `footnote[^1]` and `[^1]: Footnote reference`.
+- Hard line breaks: two or more trailing spaces followed by a newline produce a `<br>`.
+- Autolinks: `<https://example.com>` renders as a clickable link.
+- Fenced code blocks with language hint: ` ```js ` emits `<code class="language-js">` for syntax highlighters.
 
 ## Size
 
@@ -74,10 +80,30 @@ const html: string = render('# TypeScript Example');
 
 See the example [here](https://flems.io/#0=N4IgzgpgNhDGAuEAmIBcIB0ALeBbKIANCAGYCWMYaA2qAHYCGuEamO+RIsA9nYn6wA8AQgAiAeQDCAFQCaABQCiAAnZQAfAB06gtcqgM6AcwC8mkBDrmtOrBAZIby5YObwGy2FgYAnSPDMQAFVpADEAWgAOc2UAeicXNw9GZkCANzIIAHcAB24feBiePksA8yyyJHgsEyQIDNgIcIqqrEJlMjoyeDIGKHCwWD6IEwBGDAAGGPjtZ0FBnzIc+GUwH1hAnHgcsFRY2IBXOhyAayMMHlxYsCgyXCRuLLpwgCswa0Fr2EXlm0+7Bx-ABG3CQAE8EoIkGQ0h0kIEcgZGlhuFA6j4PrFoWkbNp5t8lvAEsUwCtEQxkaj0coTMoHrADsw+BgjBB4IoYEz4AAhMEASSQAAoAOTkyloiA+YUASgA3LNPLwwKiIBgoNwjIKxRAURKfNKFdrdeiMJ06JKABLSACyABkacoKnQHlkMDc7i66AApMAYHyWdEigDEym5PkekB8ykUAA8mIiIJptEm6BbHspfBBlAB9MHcA7Z5TwUEMMEAfhl8p0Xx+ROT1ZB4JsnEgMAQZCVrFGAGZUABOABMIAAvoR6EwWOgMG9OMV+PBWCOxyAUpPMLAwFRiHPSovhwBdYdAA)
 
+**UMD via unpkg:**
+
 ```html
-<script src="https://unpkg.com/slimdown-js"></script>
+<script src="https://unpkg.com/slimdown-js/dist/slimdown.umd.js"></script>
 <script>
   const html = window.slimdownJs.render('# Browser Example');
+</script>
+```
+
+**UMD via jsDelivr:**
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/slimdown-js/dist/slimdown.umd.js"></script>
+<script>
+  const html = window.slimdownJs.render('# Browser Example');
+</script>
+```
+
+**Native ESM (no bundler needed):**
+
+```html
+<script type="module">
+  import { render } from 'https://esm.sh/slimdown-js';
+  document.body.innerHTML = render('# Hello from ESM!');
 </script>
 ```
 
@@ -87,9 +113,32 @@ For more examples, see [examples.md](./examples.md).
 
 Head over to [`flems.io` for a live example](https://flems.io/#0=N4IgtglgJlA2CmIBcAWArAOgMwBoQGd4EBjAF3imRA1PxD32ICcB7WWZAbQAYcAmAOzcAungBmEBHSSdQAOwCGYREmq16IYiznkdVCGAAOLJqQAEAKjML8Z-FDNjWYMwB0CsA1BYB3OQFoAK3x3AG5XOQitOXw2eAxYFgBzAAp7AEoIqO18czAHAF4zAAMIgGIzABUIUgQsuUqWMwBXQksLAGVPfN85CwscMySmBQAjMxrHZzNOOUMwYRSAC1JSQ3wkAHpNn12MObBgjC0wTcMFYgBrBST4Tfxu7z8g-HSzE0sxE0urUiX4MyGViBeBkd5yGYAcRqAAlmqNFis1httkkakt4ccWKd4EwIJcAG7NdgQORJfD3R69F7pDD1KwAeTk8AiVkqPhYrKqSyY8BZELM-jMADEWM0mBEzIKRRACfypREhZwAB7CMwAEW0-KVZjVHVIklgZlITW89Uq8FyZjAAE83K5igB9LRQeCO1wO+plCodeH-BRQepMgH9Ugc-rGnl89oWL7i-pWCRyumROTBsyOx1hliZyO8gGOuNMR2OWUFx34CDK3OEOUQx3wCBJFaOlMRACMGDMwYifC77M5ciw-aj-PKFUqYwQZngyqUhjqqc4k9G0-9rqYwgiAB8qlPLVLD4fdwBBXlHi9S3cAYRYbCvO-8T+fL9f26Qr8-T6Q28-P53ZhaEaWATLYF67nizakP4CieEkzIOLuAAk7YAGzcNwZjbgBQFmHwoGXruxDwDouIUIRh4ofh2FyLuABe8CjCMdikHihgHruCjnsyCjmOBR4oVh9QeqUnoOvkXoTvuM5zkYi4ASuUiXleZhngCynHmYt73kJtFfvp776a+P5-jRRH3iBEBgUeEFNisMFwQhWFmCh6GYWZgH3vhVkUcRpG8g4-FSlRun0YxzG5GxHHWNx8C8RRlHtrpWRiaJpSpt6FTqvAEhyDUEA5PUABySgAklSAajlpL5doZjthEJXKHhZgVdluU1RCfCSWYACScieMynmutYcgOF8LCkHIE2WvUACyJgAuQyrmD46L2sUpIDfAKRIS68CZA6djzggbZyAAfKpZiriwVxmAAjs000RBdFysPgtjZmYW34KdMJkQRCh2AYC4AuNk3TZwAB67bCF2ADqa2xE1AZQB1sHGrO5gKGI5BMBMpCnfN55LQTGCnVDMMVbNdq8mIZFyMRGDFOEqZgBgvKjbiKTeMQzTKDoGCjCwUA2oMYApAA5KjBIS2LNBMK0pBpFA7MkRuKT5OkWvpKEGiECQBo5FQaACEg3AgAAvqIIADZc0iyCAijKFQkB-HiHB4OKHCqEi6xbJszRzJcSRYqcrs8pIAACfZ9u2fCbOH7sYJAcgYMEGikDa7FUIwbGkJbODyKVOdUs86ee0w3sgL7KIB0HIcnJSXjUsEkedp23CbKjuRNz0fgYHzKvlyAmfZ6oucQIY+dWxbQA).
 
+## API Reference
+
+### `render(markdown, options?)`
+
+| Parameter                  | Type      | Default | Description                                          |
+| -------------------------- | --------- | ------- | ---------------------------------------------------- |
+| `markdown`                 | `string`  | —       | The Markdown text to render                          |
+| `options.removeParagraphs` | `boolean` | `false` | Strip the `<p>` wrapper from top-level paragraphs    |
+| `options.externalLinks`    | `boolean` | `false` | Add `target="_blank"` to all links                   |
+
+The legacy positional form `render(markdown, removeParagraphs?, externalLinks?)` is also supported for backwards compatibility.
+
+### `addRule(regex, replacement)`
+
+Adds a custom parsing rule. Rules are applied during the pre-paragraph phase.
+
+```ts
+import { addRule } from 'slimdown-js';
+
+// Convert :) to a smiley
+addRule(/(\W)\:\)(\W)/g, '$1<img src="smiley.png" alt=":)" />$2');
+```
+
 ## Development
 
-Use `npm start` to convert the TypeScript code to JavaScript and `npm test` to run the test watcher. It uses `microbundle` to compile the final code to different output formats.
+Use `npm test` to run the test suite and `npm run test:watch` for continuous testing. Uses `tsup` to compile to CommonJS, ESM, and UMD output formats.
 
 ## Usage
 
@@ -204,7 +253,8 @@ console.log(render(`[Sales Data 2024]
 | Product | Q1 Sales |       |      | Q2 |
 | ------- | -------- | ----- |
 | Widget  | $1000    | $1200 |
-| Gadget  | $800     | $900  | `)); |
+| Gadget  | $800     | $900  |
+`));
 // Creates table with caption and Q1 Sales spanning multiple columns
 ```
 
