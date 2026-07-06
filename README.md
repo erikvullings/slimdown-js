@@ -29,7 +29,7 @@ Supports the following elements (and can be extended via `addRule(regexp: RegExp
 - Task lists: `- [x] Completed` or `- [ ] Todo`
 - Definition lists: `Term : Definition` (capitalized terms and definitions)
 - Underscores (Escape underscores to keep them `\_`)
-- Ordered/unordered lists (up to three levels deep, may be nested)
+- Ordered/unordered lists (up to three levels deep, may be nested). Ordered lists support `1.` and `1)` markers and preserve non-1 start values when a list resumes after intervening content.
 - Superscript and subscript (`z~1~` or `a^2^`)
 - Footnotes, e.g. `footnote[^1]` and `[^1]: Footnote reference`.
 - Hard line breaks: two or more trailing spaces followed by a newline produce a `<br>`.
