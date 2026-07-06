@@ -67,7 +67,7 @@ const ulList = (
   item: string,
 ) => {
   const level = Math.floor(indent.length / 2);
-  return `\n{{LISTITEM:ul:${level}::${item.trim()}}}\n`;
+  return `\n{{LISTITEM:ul:${level}:::${item.trim()}}}\n`;
 };
 
 const olList = (
@@ -78,7 +78,90 @@ const olList = (
 ) => {
   const level = Math.floor(indent.length / 2);
   const start = Number.parseInt(bullet, 10);
-  return `\n{{LISTITEM:ol:${level}:${start}:${item.trim()}}}\n`;
+  return `\n{{LISTITEM:ol:${level}::${start}:${item.trim()}}}\n`;
+};
+
+const alphaOlList = (
+  indent: string,
+  orderedStyle: 'a' | 'A',
+  start: number,
+  item: string,
+) => {
+  const level = Math.floor(indent.length / 2);
+  return `\n{{LISTITEM:ol:${level}:${orderedStyle}:${start}:${item.trim()}}}\n`;
+};
+
+const parseAlphaListLine = (line: string) => {
+  const match = line.match(/^( *)([A-Za-z][.)]|\([A-Za-z]\)) (.*)$/);
+  if (!match) return undefined;
+
+  const letter = match[2].match(/[A-Za-z]/)?.[0] ?? 'a';
+  const orderedStyle: 'a' | 'A' = letter === letter.toUpperCase() ? 'A' : 'a';
+  return {
+    indent: match[1],
+    orderedStyle,
+    start: letter.toLowerCase().charCodeAt(0) - 96,
+    item: match[3],
+  };
+};
+
+const processAlphaListItems = (markdown: string): string => {
+  const lines = markdown.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const first = parseAlphaListLine(lines[i]);
+    if (!first) continue;
+
+    const run = [i];
+    let expectedStart = first.start + 1;
+    const baseIndent = first.indent.length;
+
+    for (let j = i + 1; j < lines.length; j++) {
+      const next = parseAlphaListLine(lines[j]);
+      if (
+        next &&
+        next.indent === first.indent &&
+        next.orderedStyle === first.orderedStyle &&
+        next.start === expectedStart
+      ) {
+        run.push(j);
+        expectedStart++;
+        continue;
+      }
+
+      if (!lines[j].trim()) {
+        break;
+      }
+
+      if (!next && lines[j].match(/^ */)![0].length > baseIndent) {
+        continue;
+      }
+
+      if (
+        next &&
+        next.indent.length > baseIndent
+      ) {
+        continue;
+      }
+
+      break;
+    }
+
+    if (run.length < 2) continue;
+
+    for (const index of run) {
+      const parsed = parseAlphaListLine(lines[index])!;
+      lines[index] = alphaOlList(
+        parsed.indent,
+        parsed.orderedStyle,
+        parsed.start,
+        parsed.item,
+      );
+    }
+    i = run[run.length - 1];
+  }
+
+  return lines.join('\n');
 };
 
 const blockquote = (_: string, __: string, item = '') =>
@@ -95,7 +178,7 @@ const taskList = (
   const checkboxHtml = `<input type="checkbox"${
     checked ? ' checked' : ''
   } disabled>`;
-  return `\n{{LISTITEM:ul:${level}::${checkboxHtml} ${item.trim()}}}\n`;
+  return `\n{{LISTITEM:ul:${level}:::${checkboxHtml} ${item.trim()}}}\n`;
 };
 
 const definitionList = (_: string, term: string, definition: string) => {
@@ -112,6 +195,7 @@ const processListItems = (markdown: string): string => {
     Array<{
       type: 'ul' | 'ol';
       level: number;
+      orderedStyle?: 'a' | 'A';
       start?: number;
       content: string;
       originalLine: string;
@@ -120,6 +204,7 @@ const processListItems = (markdown: string): string => {
   let currentGroup: Array<{
     type: 'ul' | 'ol';
     level: number;
+    orderedStyle?: 'a' | 'A';
     start?: number;
     content: string;
     originalLine: string;
@@ -128,11 +213,12 @@ const processListItems = (markdown: string): string => {
   let hasEmptyLineSinceLastItem = false;
 
   for (const line of lines) {
-    const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):([^:]*):(.+)\}\}/);
+    const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):([^:]*):([^:]*):(.+)\}\}/);
     if (listMatch) {
       const itemType = listMatch[1] as 'ul' | 'ol';
       const itemLevel = parseInt(listMatch[2]);
-      const itemStart = listMatch[3] ? parseInt(listMatch[3]) : undefined;
+      const itemOrderedStyle = listMatch[3] as 'a' | 'A' | '';
+      const itemStart = listMatch[4] ? parseInt(listMatch[4]) : undefined;
 
       // Check if we should break the group due to type change after empty line
       if (hasEmptyLineSinceLastItem && currentGroup.length > 0) {
@@ -147,8 +233,9 @@ const processListItems = (markdown: string): string => {
       currentGroup.push({
         type: itemType,
         level: itemLevel,
+        orderedStyle: itemOrderedStyle || undefined,
         start: itemStart,
-        content: listMatch[4],
+        content: listMatch[5],
         originalLine: line,
       });
       hasEmptyLineSinceLastItem = false;
@@ -194,6 +281,7 @@ const buildNestedList = (
   listItems: Array<{
     type: 'ul' | 'ol';
     level: number;
+    orderedStyle?: 'a' | 'A';
     start?: number;
     content: string;
     originalLine: string;
@@ -202,8 +290,12 @@ const buildNestedList = (
   if (listItems.length === 0) return '';
 
   let html = '';
-  const stack: Array<{ type: 'ul' | 'ol'; level: number; hasOpenLi: boolean }> =
-    [];
+  const stack: Array<{
+    type: 'ul' | 'ol';
+    level: number;
+    orderedStyle?: 'a' | 'A';
+    hasOpenLi: boolean;
+  }> = [];
 
   for (let i = 0; i < listItems.length; i++) {
     const item = listItems[i];
@@ -222,7 +314,8 @@ const buildNestedList = (
     if (
       stack.length > 0 &&
       stack[stack.length - 1].level === item.level &&
-      stack[stack.length - 1].type !== item.type
+      (stack[stack.length - 1].type !== item.type ||
+        stack[stack.length - 1].orderedStyle !== item.orderedStyle)
     ) {
       const last = stack.pop()!;
       if (last.hasOpenLi) {
@@ -233,12 +326,21 @@ const buildNestedList = (
 
     // Open new list if needed
     if (stack.length === 0 || stack[stack.length - 1].level < item.level) {
+      const styleAttr =
+        item.type === 'ol' && item.orderedStyle
+          ? ` type="${item.orderedStyle}"`
+          : '';
       const startAttr =
         item.type === 'ol' && item.start && item.start !== 1
           ? ` start="${item.start}"`
           : '';
-      html += `<${item.type}${startAttr}>`;
-      stack.push({ type: item.type, level: item.level, hasOpenLi: false });
+      html += `<${item.type}${styleAttr}${startAttr}>`;
+      stack.push({
+        type: item.type,
+        level: item.level,
+        orderedStyle: item.orderedStyle,
+        hasOpenLi: false,
+      });
     }
 
     // Close previous li at same level if needed
@@ -616,6 +718,8 @@ export interface RenderOptions {
   removeParagraphs?: boolean;
   /** If true, add `target="_blank"` to all links. Default: false. */
   externalLinks?: boolean;
+  /** If true, parse alpha ordered lists such as `a.`, `A)`, or `(b)`. Default: false. */
+  alphaLists?: boolean;
 }
 
 /**
@@ -636,12 +740,15 @@ export function render(
 ) {
   let removeParagraphs: boolean;
   let externalLinks: boolean;
+  let alphaLists: boolean;
   if (typeof optionsOrRemoveParagraphs === 'object') {
     removeParagraphs = optionsOrRemoveParagraphs.removeParagraphs ?? false;
     externalLinks = optionsOrRemoveParagraphs.externalLinks ?? false;
+    alphaLists = optionsOrRemoveParagraphs.alphaLists ?? false;
   } else {
     removeParagraphs = optionsOrRemoveParagraphs;
     externalLinks = externalLinksArg;
+    alphaLists = false;
   }
   // Reset the storage arrays
   codeBlocks.length = 0;
@@ -655,6 +762,10 @@ export function render(
   markdown = extractMathBlocks(markdown);
   markdown = extractInlineCode(markdown);
   markdown = extractInlineMath(markdown);
+
+  if (alphaLists) {
+    markdown = processAlphaListItems(markdown);
+  }
 
   // Apply pre-paragraph rules
   preParaRules.forEach(([regex, subst, repeat = 1]) => {

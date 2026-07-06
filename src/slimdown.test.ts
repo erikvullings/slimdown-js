@@ -967,6 +967,93 @@ test('ordered lists support closing parenthesis markers', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('alpha lists are ignored by default', (t) => {
+  const md = `a. First item
+b. Second item`;
+
+  const html = render(md);
+  t.false(html.includes('<ol'));
+  t.true(html.includes('a. First item'));
+  t.true(html.includes('b. Second item'));
+});
+
+test('alpha lists can be enabled with render options', (t) => {
+  const md = `a. First item
+b. Second item`;
+
+  const expected = `<ol type="a">
+  <li>First item</li>
+  <li>Second item</li>
+</ol>`;
+
+  const html = render(md, { alphaLists: true });
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('single alpha markers are ignored even when alpha lists are enabled', (t) => {
+  const md = `A. Smith wrote this paragraph.`;
+
+  const html = render(md, { alphaLists: true });
+  t.false(html.includes('<ol'));
+  t.true(html.includes('A. Smith wrote this paragraph.'));
+});
+
+test('alpha lists require sequential markers on consecutive lines', (t) => {
+  const md = `a. First item
+c. Third item`;
+
+  const html = render(md, { alphaLists: true });
+  t.false(html.includes('<ol'));
+  t.true(html.includes('a. First item'));
+  t.true(html.includes('c. Third item'));
+});
+
+test('alpha lists allow nested numeric children between sequential markers', (t) => {
+  const md = `A. first item
+    1. first sub item
+    2. second sub item
+B. second item`;
+
+  const expected = `<ol type="A">
+  <li>first item
+    <ol>
+      <li>first sub item</li>
+      <li>second sub item</li>
+    </ol>
+  </li>
+  <li>second item</li>
+</ol>`;
+
+  const html = render(md, { alphaLists: true });
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('uppercase alpha lists preserve style and start', (t) => {
+  const md = `C) Third item
+D) Fourth item`;
+
+  const expected = `<ol type="A" start="3">
+  <li>Third item</li>
+  <li>Fourth item</li>
+</ol>`;
+
+  const html = render(md, { alphaLists: true });
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('parenthesized alpha list markers are supported', (t) => {
+  const md = `(b) Second item
+(c) Third item`;
+
+  const expected = `<ol type="a" start="2">
+  <li>Second item</li>
+  <li>Third item</li>
+</ol>`;
+
+  const html = render(md, { alphaLists: true });
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
 test('code block with language class', (t) => {
   const md = "```js\nconsole.log('hi');\n```\n";
   const html = render(md);
