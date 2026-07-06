@@ -1,4 +1,4 @@
-import { render } from './index.js';
+import { render, type SlimdownExtension } from './index.js';
 import test from 'ava';
 
 const removeWhitespaces = (txt: string) => txt.replace(/\s+/g, '');
@@ -920,6 +920,72 @@ test('mixed unordered and ordered lists', (t) => {
 
   const html = render(md);
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('codeblock extension', (t) => {
+  const extension: SlimdownExtension = {
+    renderCodeBlock: ({ lang, code, escapeHtml }) =>
+      lang === 'mermaid'
+        ? `<div class="mermaid">${escapeHtml(code)}</div>`
+        : undefined,
+  };
+  const html = render(
+    `\`\`\`mermaid
+graph TD
+  A --> B
+\`\`\``,
+    { extensions: [extension] },
+  );
+
+  t.is(
+    removeWhitespaces(html),
+    removeWhitespaces(
+      '<div class="mermaid">graph TD\n  A --&gt; B</div>',
+    ),
+  );
+});
+
+test('codeblock extension fallback', (t) => {
+  const extension: SlimdownExtension = {
+    renderCodeBlock: () => undefined,
+  };
+  const html = render(
+    `\`\`\`ts
+const value = '<safe>';
+\`\`\``,
+    { extensions: [extension] },
+  );
+
+  t.is(
+    removeWhitespaces(html),
+    removeWhitespaces(
+      '<pre><code class="language-ts">const value = &#39;&lt;safe&gt;&#39;;</code></pre>',
+    ),
+  );
+});
+
+test('math extensions', (t) => {
+  const extension: SlimdownExtension = {
+    renderInlineMath: ({ math, escapeHtml }) =>
+      `<span class="katex-inline">${escapeHtml(math)}</span>`,
+    renderMathBlock: ({ math, escapeHtml }) =>
+      `<div class="katex-block">${escapeHtml(math)}</div>`,
+  };
+  const html = render(
+    `Inline $E = mc^2$.
+
+$$
+\\sum_i x_i
+$$`,
+    { extensions: [extension] },
+  );
+
+  t.is(
+    removeWhitespaces(html),
+    removeWhitespaces(
+      '<p>Inline <span class="katex-inline">E = mc^2</span>.</p><div class="katex-block">\\sum_i x_i</div>',
+    ),
+  );
 });
 
 test('ordered list preserves non-one start number', (t) => {

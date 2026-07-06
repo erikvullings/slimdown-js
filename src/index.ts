@@ -1,5 +1,31 @@
 export type RegexReplacer = (substring: string, ...args: any[]) => string;
 
+export interface SlimdownRenderHookInput {
+  /** Escape text for safe HTML text-node output. */
+  escapeHtml: (value: string) => string;
+}
+
+export interface SlimdownCodeBlockInput extends SlimdownRenderHookInput {
+  lang: string;
+  code: string;
+}
+
+export interface SlimdownMathInput extends SlimdownRenderHookInput {
+  math: string;
+}
+
+export interface SlimdownExtension {
+  /**
+   * Render a fenced code block. Return undefined to let the next extension or
+   * the built-in renderer handle it.
+   */
+  renderCodeBlock?: (input: SlimdownCodeBlockInput) => string | undefined;
+  /** Render a block math expression captured from $$...$$. */
+  renderMathBlock?: (input: SlimdownMathInput) => string | undefined;
+  /** Render an inline math expression captured from $...$. */
+  renderInlineMath?: (input: SlimdownMathInput) => string | undefined;
+}
+
 /**
  * Slimdown - A very basic regex-based Markdown parser. Supports the
  * following elements (and can be extended via Slimdown::add_rule()):
@@ -50,7 +76,7 @@ const escapeMap: Record<string, string> = {
 
 const escRegex = new RegExp(`[${Object.keys(escapeMap).join('')}]`, 'g');
 
-const esc = (s: string): string =>
+export const escapeHtml = (s: string): string =>
   s.replace(escRegex, (match) => escapeMap[match]);
 
 const para = (_: string, line: string) => {
@@ -619,14 +645,40 @@ const extractInlineCode = (markdown: string): string => {
   });
 };
 
+const renderWithExtension = <Input>(
+  extensions: SlimdownExtension[],
+  method: keyof SlimdownExtension,
+  input: Input,
+  fallback: () => string,
+) => {
+  for (const extension of extensions) {
+    const renderer = extension[method] as
+      | ((input: Input) => string | undefined)
+      | undefined;
+    const html = renderer?.(input);
+    if (typeof html === 'string') return html;
+  }
+  return fallback();
+};
+
 // Function to restore code blocks with proper HTML escaping
-const restoreCodeBlocks = (markdown: string): string => {
+const restoreCodeBlocks = (
+  markdown: string,
+  extensions: SlimdownExtension[],
+): string => {
   return markdown.replace(
     /<pre>{{CODEBLOCKPH(\d+)}}<\/pre>/g,
     (_match, index) => {
       const { lang, code } = codeBlocks[parseInt(index)];
-      const classAttr = lang ? ` class="language-${lang}"` : '';
-      return `<pre><code${classAttr}>${esc(code)}</code></pre>`;
+      return renderWithExtension(
+        extensions,
+        'renderCodeBlock',
+        { lang, code, escapeHtml },
+        () => {
+          const classAttr = lang ? ` class="language-${lang}"` : '';
+          return `<pre><code${classAttr}>${escapeHtml(code)}</code></pre>`;
+        },
+      );
     },
   );
 };
@@ -635,7 +687,7 @@ const restoreCodeBlocks = (markdown: string): string => {
 const restoreInlineCode = (markdown: string): string => {
   return markdown.replace(/{{INLINECODEPH(\d+)}}/g, (_match, index) => {
     const code = inlineCode[parseInt(index)];
-    return `<code>${esc(code)}</code>`;
+    return `<code>${escapeHtml(code)}</code>`;
   });
 };
 
@@ -656,18 +708,34 @@ const extractInlineMath = (markdown: string): string => {
 };
 
 // Function to restore math blocks
-const restoreMathBlocks = (markdown: string): string => {
+const restoreMathBlocks = (
+  markdown: string,
+  extensions: SlimdownExtension[],
+): string => {
   return markdown.replace(/{{MATHBLOCKPH(\d+)}}/g, (_match, index) => {
     const math = mathBlocks[parseInt(index)];
-    return `<div class="math-block">${esc(math)}</div>`;
+    return renderWithExtension(
+      extensions,
+      'renderMathBlock',
+      { math, escapeHtml },
+      () => `<div class="math-block">${escapeHtml(math)}</div>`,
+    );
   });
 };
 
 // Function to restore inline math
-const restoreInlineMath = (markdown: string): string => {
+const restoreInlineMath = (
+  markdown: string,
+  extensions: SlimdownExtension[],
+): string => {
   return markdown.replace(/{{INLINEMATHPH(\d+)}}/g, (_match, index) => {
     const math = inlineMath[parseInt(index)];
-    return `<span class="math-inline">${esc(math)}</span>`;
+    return renderWithExtension(
+      extensions,
+      'renderInlineMath',
+      { math, escapeHtml },
+      () => `<span class="math-inline">${escapeHtml(math)}</span>`,
+    );
   });
 };
 
@@ -720,6 +788,8 @@ export interface RenderOptions {
   externalLinks?: boolean;
   /** If true, parse alpha ordered lists such as `a.`, `A)`, or `(b)`. Default: false. */
   alphaLists?: boolean;
+  /** Optional render hooks for code blocks and math placeholders. */
+  extensions?: SlimdownExtension[];
 }
 
 /**
@@ -741,14 +811,17 @@ export function render(
   let removeParagraphs: boolean;
   let externalLinks: boolean;
   let alphaLists: boolean;
+  let extensions: SlimdownExtension[];
   if (typeof optionsOrRemoveParagraphs === 'object') {
     removeParagraphs = optionsOrRemoveParagraphs.removeParagraphs ?? false;
     externalLinks = optionsOrRemoveParagraphs.externalLinks ?? false;
     alphaLists = optionsOrRemoveParagraphs.alphaLists ?? false;
+    extensions = optionsOrRemoveParagraphs.extensions ?? [];
   } else {
     removeParagraphs = optionsOrRemoveParagraphs;
     externalLinks = externalLinksArg;
     alphaLists = false;
+    extensions = [];
   }
   // Reset the storage arrays
   codeBlocks.length = 0;
@@ -788,10 +861,10 @@ export function render(
   });
 
   // Restore code blocks, math, and inline code with proper escaping
-  markdown = restoreCodeBlocks(markdown);
-  markdown = restoreMathBlocks(markdown);
+  markdown = restoreCodeBlocks(markdown, extensions);
+  markdown = restoreMathBlocks(markdown, extensions);
   markdown = restoreInlineCode(markdown);
-  markdown = restoreInlineMath(markdown);
+  markdown = restoreInlineMath(markdown, extensions);
 
   // Add footnotes section if there are any footnotes
   markdown = markdown.trim() + generateFootnotesSection();

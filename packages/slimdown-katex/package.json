@@ -1,0 +1,46 @@
+{
+  "name": "slimdown-katex",
+  "version": "0.2.0",
+  "description": "KaTeX math rendering extension for slimdown-js.",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "markdown",
+    "slimdown",
+    "katex",
+    "math"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "katex": "^0.16.0",
+    "slimdown-js": "^1.3.0"
+  },
+  "devDependencies": {
+    "katex": "^0.16.25",
+    "slimdown-js": "file:../.."
+  },
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "test": "npm run build && node test/index.test.mjs",
+    "dry-run": "npm run build && npm publish --dry-run",
+    "patch": "npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
+    "minor": "npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
+    "major": "npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
+  }
+}

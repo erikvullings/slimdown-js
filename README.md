@@ -22,6 +22,7 @@ Use slimdown-js when you want:
 - TypeScript types out of the box
 - Common Markdown features such as headings, emphasis, links, lists, tables, code, math, task lists, footnotes, and definition lists
 - Simple custom syntax via `addRule(regex, replacement)`
+- Optional renderer extensions for KaTeX, Mermaid, and syntax-highlighted code blocks
 - A practical renderer for trusted or already-sanitized Markdown snippets
 
 For strict CommonMark/GFM compatibility, large documents, or full Markdown extension ecosystems, use a spec-oriented parser such as [marked](https://github.com/markedjs/marked), [markdown-it](https://github.com/markdown-it/markdown-it), or [micromark](https://github.com/micromark/micromark).
@@ -103,8 +104,47 @@ The test suite covers the supported behavior in this package, including list con
 | `options.removeParagraphs` | `boolean` | `false` | Strip the `<p>` wrapper from top-level paragraphs |
 | `options.externalLinks`    | `boolean` | `false` | Add `target="_blank"` to links |
 | `options.alphaLists`       | `boolean` | `false` | Parse alpha ordered-list markers such as `a.`, `A)`, and `(b)` when at least two sequential markers appear in the same list run |
+| `options.extensions`       | `SlimdownExtension[]` | `[]` | Optional render hooks for fenced code blocks, inline math, and block math |
 
 The legacy positional form `render(markdown, removeParagraphs?, externalLinks?)` is also supported for backwards compatibility.
+
+### Optional Extensions
+
+The core package remains dependency-free. Heavier rendering features live in sibling packages that plug into the `extensions` option:
+
+```bash
+npm install slimdown-js slimdown-katex katex
+npm install slimdown-js slimdown-mermaid mermaid
+npm install slimdown-js slimdown-highlight highlight.js
+```
+
+```ts
+import { render } from 'slimdown-js';
+import { katexExtension } from 'slimdown-katex';
+import { mermaidExtension } from 'slimdown-mermaid';
+import { highlightExtension } from 'slimdown-highlight';
+
+const html = render(markdown, {
+  extensions: [
+    katexExtension(),
+    mermaidExtension(),
+    highlightExtension(),
+  ],
+});
+```
+
+Extensions are tried in order. If an extension does not handle a code block or math expression, slimdown-js falls back to its built-in escaped HTML output.
+
+```ts
+import type { SlimdownExtension } from 'slimdown-js';
+
+const customCodeBlocks: SlimdownExtension = {
+  renderCodeBlock: ({ lang, code, escapeHtml }) => {
+    if (lang !== 'demo') return undefined;
+    return `<figure data-lang="demo">${escapeHtml(code)}</figure>`;
+  },
+};
+```
 
 ### `addRule(regex, replacement)`
 
