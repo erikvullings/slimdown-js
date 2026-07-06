@@ -67,17 +67,18 @@ const ulList = (
   item: string,
 ) => {
   const level = Math.floor(indent.length / 2);
-  return `\n{{LISTITEM:ul:${level}:${item.trim()}}}\n`;
+  return `\n{{LISTITEM:ul:${level}::${item.trim()}}}\n`;
 };
 
 const olList = (
   _text: string,
   indent: string,
-  _bullet: string,
+  bullet: string,
   item: string,
 ) => {
   const level = Math.floor(indent.length / 2);
-  return `\n{{LISTITEM:ol:${level}:${item.trim()}}}\n`;
+  const start = Number.parseInt(bullet, 10);
+  return `\n{{LISTITEM:ol:${level}:${start}:${item.trim()}}}\n`;
 };
 
 const blockquote = (_: string, __: string, item = '') =>
@@ -94,7 +95,7 @@ const taskList = (
   const checkboxHtml = `<input type="checkbox"${
     checked ? ' checked' : ''
   } disabled>`;
-  return `\n{{LISTITEM:ul:${level}:${checkboxHtml} ${item.trim()}}}\n`;
+  return `\n{{LISTITEM:ul:${level}::${checkboxHtml} ${item.trim()}}}\n`;
 };
 
 const definitionList = (_: string, term: string, definition: string) => {
@@ -111,6 +112,7 @@ const processListItems = (markdown: string): string => {
     Array<{
       type: 'ul' | 'ol';
       level: number;
+      start?: number;
       content: string;
       originalLine: string;
     }>
@@ -118,6 +120,7 @@ const processListItems = (markdown: string): string => {
   let currentGroup: Array<{
     type: 'ul' | 'ol';
     level: number;
+    start?: number;
     content: string;
     originalLine: string;
   }> = [];
@@ -125,10 +128,11 @@ const processListItems = (markdown: string): string => {
   let hasEmptyLineSinceLastItem = false;
 
   for (const line of lines) {
-    const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):(.+)\}\}/);
+    const listMatch = line.match(/\{\{LISTITEM:([^:]+):([^:]+):([^:]*):(.+)\}\}/);
     if (listMatch) {
       const itemType = listMatch[1] as 'ul' | 'ol';
       const itemLevel = parseInt(listMatch[2]);
+      const itemStart = listMatch[3] ? parseInt(listMatch[3]) : undefined;
 
       // Check if we should break the group due to type change after empty line
       if (hasEmptyLineSinceLastItem && currentGroup.length > 0) {
@@ -143,7 +147,8 @@ const processListItems = (markdown: string): string => {
       currentGroup.push({
         type: itemType,
         level: itemLevel,
-        content: listMatch[3],
+        start: itemStart,
+        content: listMatch[4],
         originalLine: line,
       });
       hasEmptyLineSinceLastItem = false;
@@ -189,6 +194,7 @@ const buildNestedList = (
   listItems: Array<{
     type: 'ul' | 'ol';
     level: number;
+    start?: number;
     content: string;
     originalLine: string;
   }>,
@@ -227,7 +233,11 @@ const buildNestedList = (
 
     // Open new list if needed
     if (stack.length === 0 || stack[stack.length - 1].level < item.level) {
-      html += `<${item.type}>`;
+      const startAttr =
+        item.type === 'ol' && item.start && item.start !== 1
+          ? ` start="${item.start}"`
+          : '';
+      html += `<${item.type}${startAttr}>`;
       stack.push({ type: item.type, level: item.level, hasOpenLi: false });
     }
 
@@ -575,7 +585,7 @@ const preParaRules = [
   [/\n-{3,}/g, '\n<hr />'], // horizontal rule (must come before ul lists)
   [/\n( *)[-*+] \[([xX ])\](.*)/g, taskList], // task lists with checkboxes (must come before regular ul lists)
   [/\n( *)(\*|-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
-  [/\n( *)([0-9]+\.) (.*)/g, olList], // ol lists
+  [/\n( *)([0-9]+[.)]) (.*)/g, olList], // ol lists
   [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript

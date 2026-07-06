@@ -922,6 +922,51 @@ test('mixed unordered and ordered lists', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('ordered list preserves non-one start number', (t) => {
+  const md = `3. Third item
+4. Fourth item`;
+
+  const expected = `<ol start="3">
+  <li>Third item</li>
+  <li>Fourth item</li>
+</ol>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('ordered list continuation after intervening paragraph keeps numbering', (t) => {
+  const md = `1. First item
+
+Some text between.
+
+2. Second item`;
+
+  const expected = `<ol>
+  <li>First item</li>
+</ol>
+<p>Some text between.</p>
+<ol start="2">
+  <li>Second item</li>
+</ol>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('ordered lists support closing parenthesis markers', (t) => {
+  const md = `1) First item
+2) Second item`;
+
+  const expected = `<ol>
+  <li>First item</li>
+  <li>Second item</li>
+</ol>`;
+
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
 test('code block with language class', (t) => {
   const md = "```js\nconsole.log('hi');\n```\n";
   const html = render(md);
