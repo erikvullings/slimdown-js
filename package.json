@@ -1,6 +1,9 @@
 {
   "name": "slimdown-js",
-  "version": "1.3.0",
+  "version": "1.4.0",
+  "workspaces": [
+    "packages/*"
+  ],
   "source": "src/index.ts",
   "main": "dist/slimdown.cjs",
   "module": "dist/slimdown.mjs",
@@ -55,16 +58,24 @@
     "node": ">=16"
   },
   "scripts": {
-    "test": "tsc && ava dist/slimdown.test.js",
+    "test": "npm run test:core && npm run test:packages",
+    "test:core": "tsc && ava dist/slimdown.test.js",
+    "test:packages": "npm test --workspaces --if-present",
     "test:watch": "ava --watch src/slimdown.test.ts",
     "clean": "rimraf dist lib",
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "npm run build:core && npm run build:packages",
+    "build:core": "tsup && tsc -p tsconfig.build.json",
+    "build:packages": "npm run build --workspaces --if-present",
     "build:check": "npm run build && node -e \"console.log('✅ CommonJS:', require('./dist/slimdown.cjs').render('# Test'))\" && node -e \"import('./dist/slimdown.mjs').then(m => console.log('✅ ESM:', m.render('# Test')))\"",
     "start": "tsc -w -p tsconfig.json",
     "dry-run": "npm publish --dry-run",
+    "dry-run:all": "npm run build && npm publish --dry-run --workspaces --include-workspace-root",
     "patch": "npm run clean && npm run build && npm version patch --force -m \"Patch release\" && npm publish && git push --follow-tags",
     "minor": "npm run clean && npm run build && npm version minor --force -m \"Minor release\" && npm publish && git push --follow-tags",
-    "major": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags"
+    "major": "npm run clean && npm run build && npm version major --force -m \"Major release\" && npm publish && git push --follow-tags",
+    "release:patch": "npm run clean && npm run build && npm version patch --workspaces --include-workspace-root --force -m \"Patch release\" && npm publish --workspaces --include-workspace-root && git push --follow-tags",
+    "release:minor": "npm run clean && npm run build && npm version minor --workspaces --include-workspace-root --force -m \"Minor release\" && npm publish --workspaces --include-workspace-root && git push --follow-tags",
+    "release:major": "npm run clean && npm run build && npm version major --workspaces --include-workspace-root --force -m \"Major release\" && npm publish --workspaces --include-workspace-root && git push --follow-tags"
   },
   "devDependencies": {
     "@ava/typescript": "^7.0.0",
