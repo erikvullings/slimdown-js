@@ -744,7 +744,7 @@ const preParaRules = [
   [/\r\n/g, '\n'], // Remove \r
   [/\n(#+)(.*)/g, header], // headers
   [/<(https?:\/\/[^\s>]+)>/g, '<a href="$1">$1</a>'], // autolinks
-  [/!\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
+  [/!\[([^\[]*)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
   [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href="$2">$1</a>'], // links
   [/([^\s]) {2,}\n/g, '$1<br>\n'], // hard line breaks (two+ trailing spaces after non-whitespace)
   [/([^\\])(\*\*|__)(.*?(_|\*)?)\2/g, '$1<strong>$3</strong>'], // bold

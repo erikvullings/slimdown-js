@@ -306,6 +306,27 @@ test('parsing images', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('parsing base64 images with empty alt text', (t) => {
+  const md = `![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA)`;
+  const expected = `<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA" alt=""></p>`;
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('parsing base64 images with empty alt text inside a table', (t) => {
+  const md = `| Image |
+|-------|
+| ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA) |`;
+  const expected = `<table>
+<tbody>
+  <tr><th>Image</th></tr>
+  <tr><td><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA" alt=""></td></tr>
+</tbody>
+</table>`;
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
 test('parsing code blocks', (t) => {
   const md = `# Code example
 \`\`\`
