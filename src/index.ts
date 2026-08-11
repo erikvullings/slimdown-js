@@ -626,6 +626,36 @@ const header = (_: string, match: string, h = '') => {
   return `<h${level}>${h.trim()}</h${level}>`;
 };
 
+/** Slugify heading text: lowercase, strip diacritics, replace non `[a-z0-9]` runs with `-`. */
+const slugify = (text: string): string => {
+  const stripped = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip combining diacritical marks
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return stripped || 'section';
+};
+
+/**
+ * Add slugified `id` attributes to `<h1>`-`<h6>` tags in already-rendered HTML.
+ * Duplicate slugs within a single call get a `-2`, `-3`, ... suffix.
+ */
+const addHeadingIds = (html: string): string => {
+  const slugCounts = new Map<string, number>();
+  return html.replace(
+    /<(h[1-6])>([\s\S]*?)<\/\1>/g,
+    (_match, tag: string, inner: string) => {
+      const text = inner.replace(/<[^>]+>/g, '');
+      const base = slugify(text);
+      const count = slugCounts.get(base) ?? 0;
+      slugCounts.set(base, count + 1);
+      const slug = count === 0 ? base : `${base}-${count + 1}`;
+      return `<${tag} id="${slug}">${inner}</${tag}>`;
+    },
+  );
+};
+
 // Function to extract and store code blocks
 const extractCodeBlocks = (markdown: string): string => {
   return markdown.replace(
@@ -788,6 +818,8 @@ export interface RenderOptions {
   externalLinks?: boolean;
   /** If true, parse alpha ordered lists such as `a.`, `A)`, or `(b)`. Default: false. */
   alphaLists?: boolean;
+  /** If true, add a slugified `id` attribute to each heading. Default: false. */
+  headingIds?: boolean;
   /** Optional render hooks for code blocks and math placeholders. */
   extensions?: SlimdownExtension[];
 }
@@ -811,16 +843,19 @@ export function render(
   let removeParagraphs: boolean;
   let externalLinks: boolean;
   let alphaLists: boolean;
+  let headingIds: boolean;
   let extensions: SlimdownExtension[];
   if (typeof optionsOrRemoveParagraphs === 'object') {
     removeParagraphs = optionsOrRemoveParagraphs.removeParagraphs ?? false;
     externalLinks = optionsOrRemoveParagraphs.externalLinks ?? false;
     alphaLists = optionsOrRemoveParagraphs.alphaLists ?? false;
+    headingIds = optionsOrRemoveParagraphs.headingIds ?? false;
     extensions = optionsOrRemoveParagraphs.extensions ?? [];
   } else {
     removeParagraphs = optionsOrRemoveParagraphs;
     externalLinks = externalLinksArg;
     alphaLists = false;
+    headingIds = false;
     extensions = [];
   }
   // Reset the storage arrays
@@ -869,6 +904,9 @@ export function render(
   // Add footnotes section if there are any footnotes
   markdown = markdown.trim() + generateFootnotesSection();
 
+  if (headingIds) {
+    markdown = addHeadingIds(markdown);
+  }
   if (removeParagraphs) {
     markdown = markdown.replace(/^<p>(.*)<\/p>$/s, '$1');
   }

@@ -82,6 +82,7 @@ slimdown-js supports a pragmatic Markdown subset plus a few useful extensions:
 - Code: inline code, fenced code blocks, optional language classes
 - Lists: unordered lists, numeric ordered lists, task lists, nested lists
 - Optional alpha ordered lists: `a.`, `A)`, `(b)` with `render(markdown, { alphaLists: true })`
+- Optional heading anchor IDs: `render(markdown, { headingIds: true })` adds a slugified `id` to each heading
 - Tables: pipe tables, table captions, simple column spanning
 - Academic and note-taking syntax: inline math, block math, footnotes, definition lists
 - Escaped underscores
@@ -104,6 +105,7 @@ The test suite covers the supported behavior in this package, including list con
 | `options.removeParagraphs` | `boolean` | `false` | Strip the `<p>` wrapper from top-level paragraphs |
 | `options.externalLinks`    | `boolean` | `false` | Add `target="_blank"` to links |
 | `options.alphaLists`       | `boolean` | `false` | Parse alpha ordered-list markers such as `a.`, `A)`, and `(b)` when at least two sequential markers appear in the same list run |
+| `options.headingIds`       | `boolean` | `false` | Add a slugified `id` attribute to each `<h1>`-`<h6>` heading, derived from its rendered text. Duplicate slugs within a render call get a `-2`, `-3`, ... suffix |
 | `options.extensions`       | `SlimdownExtension[]` | `[]` | Optional render hooks for fenced code blocks, inline math, and block math |
 
 The legacy positional form `render(markdown, removeParagraphs?, externalLinks?)` is also supported for backwards compatibility.

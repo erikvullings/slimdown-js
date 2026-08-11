@@ -289,6 +289,60 @@ More text...
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('headings have no id attribute by default', (t) => {
+  const md = `# Hello world\n\n## Setup`;
+  const html = render(md);
+  t.false(html.includes('id='));
+});
+
+test('headings have no id attribute when headingIds is false', (t) => {
+  const md = `# Hello world`;
+  const html = render(md, { headingIds: false });
+  t.false(html.includes('id='));
+});
+
+test('headingIds adds a slugified id to each heading', (t) => {
+  const md = `# Hello World\n\n## Second Level Heading`;
+  const html = render(md, { headingIds: true });
+  t.true(html.includes('<h1 id="hello-world">Hello World</h1>'));
+  t.true(html.includes('<h2 id="second-level-heading">Second Level Heading</h2>'));
+});
+
+test('headingIds slugifies rendered inline content, not raw markdown', (t) => {
+  const md = `## **Setup**`;
+  const html = render(md, { headingIds: true });
+  t.true(html.includes('<h2 id="setup"><strong>Setup</strong></h2>'));
+});
+
+test('headingIds falls back to "section" for symbol-only headings', (t) => {
+  const md = `# !!!`;
+  const html = render(md, { headingIds: true });
+  t.true(html.includes('<h1 id="section">'));
+});
+
+test('headingIds strips accents to base Latin letters', (t) => {
+  const md = `# Café Déjà Vu`;
+  const html = render(md, { headingIds: true });
+  t.true(html.includes('<h1 id="cafe-deja-vu">Café Déjà Vu</h1>'));
+});
+
+test('headingIds appends -2, -3 suffixes for duplicate slugs', (t) => {
+  const md = `# Overview\n\n## Overview\n\n### Overview`;
+  const html = render(md, { headingIds: true });
+  t.true(html.includes('<h1 id="overview">Overview</h1>'));
+  t.true(html.includes('<h2 id="overview-2">Overview</h2>'));
+  t.true(html.includes('<h3 id="overview-3">Overview</h3>'));
+});
+
+test('headingIds keeps slug counts scoped to a single render call', (t) => {
+  const first = render(`# Overview\n\n## Overview`, { headingIds: true });
+  const second = render(`# Overview`, { headingIds: true });
+  t.true(first.includes('<h1 id="overview">Overview</h1>'));
+  t.true(first.includes('<h2 id="overview-2">Overview</h2>'));
+  t.true(second.includes('<h1 id="overview">Overview</h1>'));
+  t.false(second.includes('id="overview-2"'));
+});
+
 test('parsing links with underscores', (t) => {
   const md = `# Links fail with underscores
 
