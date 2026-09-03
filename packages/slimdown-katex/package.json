@@ -28,12 +28,12 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "katex": "^0.16.0",
-    "slimdown-js": "^1.3.0"
+    "katex": ">=0.16.0 <1.0.0",
+    "slimdown-js": ">=1.5.0"
   },
   "devDependencies": {
-    "katex": "^0.18.4",
-    "slimdown-js": "file:../.."
+    "katex": "^0.18.5",
+    "slimdown-js": "1.5.0"
   },
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
