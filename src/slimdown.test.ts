@@ -1215,6 +1215,117 @@ test('hard line breaks', (t) => {
   t.is(removeWhitespaces(html), removeWhitespaces(expected));
 });
 
+test('unordered list items keep hard-break continuations', (t) => {
+  const html = render('- first line  \n  second line');
+  t.is(html.match(/<li>/g)?.length, 1);
+  t.true(/<li>first line<br>\s*second line<\/li>/.test(html));
+});
+
+test('unordered list items keep soft and lazy continuations', (t) => {
+  const indented = render('- first line\n  second line');
+  const lazy = render('- first line\nsecond line');
+
+  for (const html of [indented, lazy]) {
+    t.is(html.match(/<li>/g)?.length, 1);
+    t.true(/<li>first line\s+second line<\/li>/.test(html));
+    t.false(html.includes('<br>'));
+  }
+});
+
+test('ordered list items keep hard-break continuations', (t) => {
+  const html = render('1. first line  \n   second line');
+  t.is(html.match(/<ol/g)?.length, 1);
+  t.is(html.match(/<li>/g)?.length, 1);
+  t.true(/<li>first line<br>\s*second line<\/li>/.test(html));
+});
+
+test('ordered list items keep soft continuations', (t) => {
+  const html = render('1. first line\n   second line');
+  t.is(html.match(/<li>/g)?.length, 1);
+  t.true(/<li>first line\s+second line<\/li>/.test(html));
+  t.false(html.includes('<br>'));
+});
+
+test('list-item continuations support CRLF', (t) => {
+  const unordered = render('- first line\r\n  second line');
+  const ordered = render('1. first line  \r\n   second line');
+  const task = render('- [ ] first line\r\n  second line');
+
+  t.true(/<li>first line\s+second line<\/li>/.test(unordered));
+  t.true(/<li>first line<br>\s*second line<\/li>/.test(ordered));
+  t.true(/disabled>\s*first line\s+second line<\/li>/.test(task));
+});
+
+test('alpha list items keep soft and hard continuations', (t) => {
+  const soft = render('a. first line\n  continuation\nb. second item', {
+    alphaLists: true,
+  });
+  const hard = render('a. first line  \n  continuation\nb. second item', {
+    alphaLists: true,
+  });
+
+  t.true(/<li>first line\s+continuation<\/li>/.test(soft));
+  t.true(/<li>first line<br>\s*continuation<\/li>/.test(hard));
+  t.is(soft.match(/<ol/g)?.length, 1);
+  t.is(hard.match(/<ol/g)?.length, 1);
+});
+
+test('list continuations do not consume sibling items', (t) => {
+  const html = render('- first line\n  continuation\n- second item');
+  const items = [...html.matchAll(/<li>(.*?)<\/li>/gs)].map((match) =>
+    match[1].replace(/\s+/g, ' ').trim(),
+  );
+  t.deepEqual(items, ['first line continuation', 'second item']);
+});
+
+test('blank lines end list-item continuations', (t) => {
+  const html = render('- list item\n\noutside paragraph');
+  t.is(html.match(/<li>/g)?.length, 1);
+  t.true(/<p>\s*outside paragraph\s*<\/p>/.test(html));
+  t.false(/<li>[\s\S]*outside paragraph[\s\S]*<\/li>/.test(html));
+});
+
+test('list continuations do not consume indented code blocks', (t) => {
+  const html = render('- list item\n    indented code');
+  t.false(/<li>[\s\S]*indented code[\s\S]*<\/li>/.test(html));
+});
+
+test('list continuations do not consume fenced code blocks', (t) => {
+  const html = render('- list item\n```\nfirst line  \nsecond line\n```');
+  t.false(/<li>[\s\S]*<pre>[\s\S]*<\/li>/.test(html));
+  t.true(html.includes('<pre><code>first line  \nsecond line</code></pre>'));
+});
+
+test('CRLF fenced code remains outside list continuations', (t) => {
+  const html = render('- list item\r\n```text\r\nfirst line  \r\nsecond line\r\n```');
+  t.false(/<li>[\s\S]*<pre>[\s\S]*<\/li>/.test(html));
+  t.true(
+    html.includes(
+      '<pre><code class="language-text">first line  \r\nsecond line</code></pre>',
+    ),
+  );
+  t.false(html.includes('<br>'));
+});
+
+test('list continuations do not consume footnote definitions', (t) => {
+  const html = render('- list item\n[^note]: explanation');
+  t.true(html.includes('<ul><li>list item</li></ul>'));
+  t.true(html.includes('<li id="fn:note">'));
+  t.true(html.includes('explanation'));
+});
+
+test('list continuations do not consume table captions', (t) => {
+  const html = render('- list item\n[Caption]\n| A |\n|---|\n| B |');
+  t.true(html.includes('<ul><li>list item</li></ul>'));
+  t.true(html.includes('<table><caption>Caption</caption>'));
+});
+
+test('list continuations do not consume headings without spaces', (t) => {
+  const html = render('- list item\n#Heading');
+  t.true(html.includes('<ul><li>list item</li></ul>'));
+  t.true(html.includes('<h1>Heading</h1>'));
+});
+
 test('hard line breaks accept extra spaces and CRLF', (t) => {
   const expected = removeWhitespaces('<p>first line<br>second line</p>');
   const html = [
@@ -1239,12 +1350,38 @@ test('hard line breaks do not absorb following block markers', (t) => {
 
 test('single newlines remain soft line breaks', (t) => {
   const html = render('first line\nsecond line');
+  t.is(html.match(/<p>/g)?.length, 1);
+  t.true(/<p>\s*first line\s+second line\s*<\/p>/.test(html));
+  t.false(html.includes('<br>'));
+});
+
+test('CRLF newlines remain soft line breaks', (t) => {
+  const html = render('first line\r\nsecond line');
+  t.is(html.match(/<p>/g)?.length, 1);
+  t.true(/<p>\s*first line\s+second line\s*<\/p>/.test(html));
   t.false(html.includes('<br>'));
 });
 
 test('blank lines end paragraphs', (t) => {
   const html = render('first paragraph\n\nsecond paragraph');
   t.is(html.match(/<p>/g)?.length, 2);
+});
+
+test('blank lines keep blockquotes separate', (t) => {
+  const html = render('> first quote\n\n> second quote');
+  t.is(html.match(/<blockquote>/g)?.length, 2);
+  t.false(html.includes('<br>'));
+});
+
+test('definition lists remain outside preceding paragraphs', (t) => {
+  const html = render('intro\nTechnology : Computer science field');
+  const paragraphs = [...html.matchAll(/<p>([\s\S]*?)<\/p>/g)].map(
+    (match) => match[1],
+  );
+  t.is(paragraphs.length, 2);
+  t.true(paragraphs[0].includes('intro'));
+  t.false(paragraphs[0].includes('<dl>'));
+  t.true(paragraphs[1].includes('<dl>'));
 });
 
 test('hard line break syntax is preserved in fenced code blocks', (t) => {

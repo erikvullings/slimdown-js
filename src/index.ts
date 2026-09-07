@@ -86,6 +86,38 @@ const para = (_: string, line: string) => {
     : `\n<p>\n${trimmed}\n</p>\n`;
 };
 
+const processParagraphs = (markdown: string): string => {
+  const blocks: string[] = [];
+  let proseLines: string[] = [];
+
+  const flushProse = () => {
+    if (proseLines.length === 0) return;
+    blocks.push(para('', proseLines.join('\n')));
+    proseLines = [];
+  };
+
+  for (const line of markdown.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed === '') {
+      flushProse();
+    } else if (/^<dl>.*<\/dl>$/.test(trimmed)) {
+      flushProse();
+      blocks.push(para('', trimmed));
+    } else if (
+      /^<\/?(ul|ol|li|h|p|bl|table|tbody|tr|td|th|caption)/i.test(trimmed) ||
+      /^{{MATHBLOCKPH\d+}}$/.test(trimmed)
+    ) {
+      flushProse();
+      blocks.push(`\n${line}\n`);
+    } else {
+      proseLines.push(trimmed);
+    }
+  }
+  flushProse();
+
+  return blocks.join('');
+};
+
 const ulList = (
   _text: string,
   indent: string,
@@ -185,6 +217,62 @@ const processAlphaListItems = (markdown: string): string => {
       );
     }
     i = run[run.length - 1];
+  }
+
+  return lines.join('\n');
+};
+
+const listLinePattern =
+  /^( *)(?:[-*+] (?:\[[xX ]\] )?|[0-9]+[.)] ).+/;
+
+const isListLine = (line: string, alphaLists: boolean): boolean =>
+  listLinePattern.test(line) || (alphaLists && parseAlphaListLine(line) !== undefined);
+
+const isListContinuationBoundary = (
+  lines: string[],
+  index: number,
+  alphaLists: boolean,
+): boolean => {
+  const line = lines[index];
+  const trimmed = line.trimStart();
+  const startsTableCaption =
+    /^\[[^\]]+\]\s*$/.test(trimmed) &&
+    /^\s*\|.*\|\s*$/.test(lines[index + 1] ?? '') &&
+    /^\s*\|(?:\s*:?-+:?\s*\|)+\s*$/.test(lines[index + 2] ?? '');
+  return (
+    line.trim() === '' ||
+    isListLine(line, alphaLists) ||
+    /^\{\{LISTITEM:/.test(trimmed) ||
+    /^\[\^[^\]]+\]:/.test(trimmed) ||
+    startsTableCaption ||
+    /^(?:#{1,6}|>|-{3,}\s*$|\||<pre>|{{MATHBLOCKPH|[A-Z][A-Za-z\s]*?\s:\s*[A-Z])/.test(trimmed) ||
+    line.match(/^ */)![0].length >= 4
+  );
+};
+
+const processListContinuations = (
+  markdown: string,
+  hardBreakPlaceholder: string,
+  alphaLists: boolean,
+): string => {
+  const lines = markdown.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!isListLine(lines[i], alphaLists) && !/^\s*\{\{LISTITEM:/.test(lines[i])) {
+      continue;
+    }
+
+    while (
+      i + 1 < lines.length &&
+      !isListContinuationBoundary(lines, i + 1, alphaLists)
+    ) {
+      const separator = lines[i].endsWith(hardBreakPlaceholder) ? '' : ' ';
+      const continuation = separator + lines[i + 1].trim();
+      lines[i] = /^\s*\{\{LISTITEM:/.test(lines[i])
+        ? `${lines[i].slice(0, -2)}${continuation}}}`
+        : lines[i] + continuation;
+      lines.splice(i + 1, 1);
+    }
   }
 
   return lines.join('\n');
@@ -623,7 +711,7 @@ const cleanUpUrl = (link: string) => link.replace(/<\/?em>/g, '_');
 
 const header = (_: string, match: string, h = '') => {
   const level = match.length;
-  return `<h${level}>${h.trim()}</h${level}>`;
+  return `\n<h${level}>${h.trim()}</h${level}>`;
 };
 
 /** Slugify heading text: lowercase, strip diacritics, replace non `[a-z0-9]` runs with `-`. */
@@ -659,7 +747,7 @@ const addHeadingIds = (html: string): string => {
 // Function to extract and store code blocks
 const extractCodeBlocks = (markdown: string): string => {
   return markdown.replace(
-    /\n\s*```(\w*)\n([^]*?)\n\s*```\s*\n/g,
+    /\n\s*```(\w*)\r?\n([^]*?)\r?\n\s*```\s*\r?\n/g,
     (_match, lang, code) => {
       codeBlocks.push({ lang, code });
       return `\n<pre>{{CODEBLOCKPH${codeBlocks.length - 1}}}</pre>\n`;
@@ -804,7 +892,6 @@ const preParaRules = [
 /** Post-paragraph rules (cleanup rules that run after paragraph processing) */
 const postParaRules = [
   [/\s?<\/[ou]l>\s?<[ou]l>/g, '', 3], // fix extra ol and ul
-  [/<\/blockquote>\n<blockquote>/g, '<br>\n'], // fix extra blockquote
   [/https?:\/\/[^"']*/g, cleanUpUrl], // fix em in links
   [/&#95;/g, '_'], // underscores part 2
 ] as Array<[RegExp, RegexReplacer | string]>;
@@ -869,6 +956,7 @@ export function render(
   markdown = extractMathBlocks(markdown);
   markdown = extractInlineCode(markdown);
   markdown = extractInlineMath(markdown);
+  markdown = markdown.replace(/\r\n/g, '\n');
 
   // Keep hard breaks within a paragraph while block-level rules process physical newlines.
   let hardBreakPlaceholder = 'SLIMDOWNHARDBREAKPH';
@@ -881,6 +969,11 @@ export function render(
       precedingCharacter + hardBreakPlaceholder + newline,
   );
 
+  markdown = processListContinuations(
+    markdown,
+    hardBreakPlaceholder,
+    alphaLists,
+  );
   if (alphaLists) {
     markdown = processAlphaListItems(markdown);
   }
@@ -894,14 +987,15 @@ export function render(
 
   // Process collected list items into proper nested structure
   markdown = processListItems(markdown);
+  markdown = markdown.replace(/<\/blockquote>\n<blockquote>/g, '<br>');
 
   markdown = markdown.replace(
     new RegExp(`${hardBreakPlaceholder}\\n(?=[^\\n])`, 'g'),
     hardBreakPlaceholder,
   );
 
-  // Apply paragraph processing
-  markdown = markdown.replace(/\n([^\n]+)\n/g, para);
+  // Apply paragraph processing after consecutive prose lines have formed logical blocks.
+  markdown = processParagraphs(markdown);
 
   // Apply post-paragraph cleanup rules
   postParaRules.forEach(([regex, subst, repeat = 1]) => {

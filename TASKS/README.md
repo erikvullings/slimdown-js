@@ -5,3 +5,4 @@
 
 ## Parser fixes
 - [x] 0002 Fix Markdown hard breaks
+- [x] 0003 Improve line continuations

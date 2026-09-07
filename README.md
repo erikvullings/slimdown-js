@@ -89,7 +89,7 @@ slimdown-js supports a pragmatic Markdown subset plus a few useful extensions:
 
 Because parsing is regex-based, the goal is useful, predictable coverage rather than full Markdown specification compatibility.
 
-### Hard Line Breaks
+### Line Breaks And List Continuations
 
 End a non-empty line with two or more spaces to insert a hard line break. The following
 line remains in the same paragraph:
@@ -99,8 +99,19 @@ render('first line  \nsecond line');
 // <p>first line<br>second line</p>
 ```
 
-A single newline remains a soft line break, while a blank line ends the paragraph.
-Trailing spaces inside fenced code blocks and inline code are preserved as code.
+A single newline is a soft break: consecutive prose lines remain in one paragraph without
+inserting `<br>`. A blank line ends the paragraph.
+
+Indented and lazy prose lines after an ordered or unordered list marker remain in that list
+item. The same soft- and hard-break rules apply inside the item:
+
+```ts
+render('- first line  \n  second line');
+// <ul><li>first line<br>second line</li></ul>
+```
+
+A sibling or nested list marker, a blank line, or a code block ends the prose continuation.
+Trailing spaces and newlines inside fenced code blocks and inline code are preserved as code.
 
 ## Compatibility And Security
 
