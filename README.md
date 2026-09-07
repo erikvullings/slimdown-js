@@ -89,6 +89,19 @@ slimdown-js supports a pragmatic Markdown subset plus a few useful extensions:
 
 Because parsing is regex-based, the goal is useful, predictable coverage rather than full Markdown specification compatibility.
 
+### Hard Line Breaks
+
+End a non-empty line with two or more spaces to insert a hard line break. The following
+line remains in the same paragraph:
+
+```ts
+render('first line  \nsecond line');
+// <p>first line<br>second line</p>
+```
+
+A single newline remains a soft line break, while a blank line ends the paragraph.
+Trailing spaces inside fenced code blocks and inline code are preserved as code.
+
 ## Compatibility And Security
 
 slimdown-js is not a sanitizer. If you render untrusted Markdown into a web page, sanitize the generated HTML with a tool such as [DOMPurify](https://github.com/cure53/DOMPurify).

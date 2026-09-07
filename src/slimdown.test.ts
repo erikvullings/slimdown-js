@@ -1210,9 +1210,52 @@ test('code block without language has no class', (t) => {
 
 test('hard line breaks', (t) => {
   const md = 'first line  \nsecond line';
-  const html = render(md, true);
-  t.true(html.includes('<br>'));
-  t.true(html.includes('second line'));
+  const expected = '<p>first line<br>second line</p>';
+  const html = render(md);
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('hard line breaks accept extra spaces and CRLF', (t) => {
+  const expected = removeWhitespaces('<p>first line<br>second line</p>');
+  const html = [
+    render('first line   \nsecond line'),
+    render('first line  \r\nsecond line'),
+  ];
+  t.deepEqual(html.map(removeWhitespaces), [expected, expected]);
+});
+
+test('hard line break placeholders do not collide with Markdown content', (t) => {
+  const html = render('SLIMDOWNHARDBREAKPH first line  \nsecond line');
+  const expected = '<p>SLIMDOWNHARDBREAKPH first line<br>second line</p>';
+  t.is(removeWhitespaces(html), removeWhitespaces(expected));
+});
+
+test('hard line breaks do not absorb following block markers', (t) => {
+  const listHtml = render('- first  \n- second');
+  const quoteHtml = render('> first  \n> second');
+  t.is(listHtml.match(/<li>/g)?.length, 2);
+  t.false(quoteHtml.includes('&gt; second'));
+});
+
+test('single newlines remain soft line breaks', (t) => {
+  const html = render('first line\nsecond line');
+  t.false(html.includes('<br>'));
+});
+
+test('blank lines end paragraphs', (t) => {
+  const html = render('first paragraph\n\nsecond paragraph');
+  t.is(html.match(/<p>/g)?.length, 2);
+});
+
+test('hard line break syntax is preserved in fenced code blocks', (t) => {
+  const html = render('```\nfirst line  \nsecond line\n```');
+  t.true(html.includes('<pre><code>first line  \nsecond line</code></pre>'));
+});
+
+test('hard line break syntax is preserved in inline code', (t) => {
+  const html = render('`first  \nsecond`');
+  t.true(html.includes('<code>first  \nsecond</code>'));
+  t.false(html.includes('<br>'));
 });
 
 test('autolinks', (t) => {
