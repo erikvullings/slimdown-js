@@ -102,6 +102,18 @@ render('first line  \nsecond line');
 A single newline is a soft break: consecutive prose lines remain in one paragraph without
 inserting `<br>`. A blank line ends the paragraph.
 
+Blockquotes use the same rules. Consecutive quoted lines stay in one blockquote: an ordinary
+newline is soft, while two or more trailing spaces insert exactly one hard break.
+
+```ts
+render('> first\n> second');
+// <blockquote>first
+// second</blockquote>
+
+render('> first  \n> second');
+// <blockquote>first<br>second</blockquote>
+```
+
 Indented and lazy prose lines after an ordered or unordered list marker remain in that list
 item. The same soft- and hard-break rules apply inside the item:
 
