@@ -58,8 +58,8 @@ importers:
         version: 11.17.2
     devDependencies:
       slimdown-js:
-        specifier: file:../..
-        version: 'file:'
+        specifier: file:../../.
+        version: link:../..
 
 packages:
 
@@ -1523,10 +1523,6 @@ packages:
 
   slimdown-js@1.5.0:
     resolution: {integrity: sha512-D/MfWv0+MPeYm2sNrw8A7hG39s22Q903VBjD8gG/LNuEm+JtPlx4TeueElqAZ3Hbp2/8dPr5O7hRin7+jJE7/A==}
-    engines: {node: '>=16'}
-
-  'slimdown-js@file:':
-    resolution: {directory: '', type: directory}
     engines: {node: '>=16'}
 
   source-map@0.7.6:
@@ -3018,8 +3014,6 @@ snapshots:
       is-fullwidth-code-point: 5.1.0
 
   slimdown-js@1.5.0: {}
-
-  'slimdown-js@file:': {}
 
   source-map@0.7.6: {}
 
