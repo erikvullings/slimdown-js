@@ -37,7 +37,7 @@
     }
   },
   "devDependencies": {
-    "slimdown-js": "file:../.."
+    "slimdown-js": "file:../../."
   },
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json",
