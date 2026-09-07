@@ -83,6 +83,7 @@ slimdown-js supports a pragmatic Markdown subset plus a few useful extensions:
 - Lists: unordered lists, numeric ordered lists, task lists, nested lists
 - Optional alpha ordered lists: `a.`, `A)`, `(b)` with `render(markdown, { alphaLists: true })`
 - Optional heading anchor IDs: `render(markdown, { headingIds: true })` adds a slugified `id` to each heading
+- Optional semantic page breaks with `render(markdown, { pageBreaks: true })`
 - Tables: pipe tables, table captions, simple column spanning
 - Academic and note-taking syntax: inline math, block math, footnotes, definition lists
 - Escaped underscores
@@ -125,6 +126,30 @@ render('- first line  \n  second line');
 A sibling or nested list marker, a blank line, or a code block ends the prose continuation.
 Trailing spaces and newlines inside fenced code blocks and inline code are preserved as code.
 
+### Semantic Page Breaks
+
+Page-break parsing is disabled by default because it is a slimdown-js extension rather than
+standard Markdown. Enable it and place the canonical marker on its own line:
+
+```ts
+render('Before\n\n<!-- markdown:page-break -->\n\nAfter', {
+  pageBreaks: true,
+});
+```
+
+The marker renders as a semantic `<div class="md-page-break">` with EPUB and accessibility
+attributes. Consumers provide print or EPUB CSS for `.md-page-break`, for example
+`break-after: page`.
+
+`PAGE_BREAK_MARKER` and `PAGE_BREAK_HTML` are exported for consumers that need the canonical
+input or fallback output. Extensions can override enabled page breaks:
+
+```ts
+const extension: SlimdownExtension = {
+  renderPageBreak: () => '<hr class="print-page-break">',
+};
+```
+
 ## Compatibility And Security
 
 slimdown-js is not a sanitizer. If you render untrusted Markdown into a web page, sanitize the generated HTML with a tool such as [DOMPurify](https://github.com/cure53/DOMPurify).
@@ -142,7 +167,8 @@ The test suite covers the supported behavior in this package, including list con
 | `options.externalLinks`    | `boolean` | `false` | Add `target="_blank"` to links |
 | `options.alphaLists`       | `boolean` | `false` | Parse alpha ordered-list markers such as `a.`, `A)`, and `(b)` when at least two sequential markers appear in the same list run |
 | `options.headingIds`       | `boolean` | `false` | Add a slugified `id` attribute to each `<h1>`-`<h6>` heading, derived from its rendered text. Duplicate slugs within a render call get a `-2`, `-3`, ... suffix |
-| `options.extensions`       | `SlimdownExtension[]` | `[]` | Optional render hooks for fenced code blocks, inline math, and block math |
+| `options.pageBreaks`       | `boolean` | `false` | Render standalone `<!-- markdown:page-break -->` markers as semantic page-break elements |
+| `options.extensions`       | `SlimdownExtension[]` | `[]` | Optional render hooks for fenced code blocks, inline math, block math, and page breaks |
 
 The legacy positional form `render(markdown, removeParagraphs?, externalLinks?)` is also supported for backwards compatibility.
 
@@ -171,7 +197,8 @@ const html = render(markdown, {
 });
 ```
 
-Extensions are tried in order. If an extension does not handle a code block or math expression, slimdown-js falls back to its built-in escaped HTML output.
+Extensions are tried in order. If an extension does not handle a code block, math expression,
+or enabled page break, slimdown-js falls back to its built-in HTML output.
 
 ```ts
 import type { SlimdownExtension } from 'slimdown-js';

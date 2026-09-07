@@ -1,4 +1,9 @@
-import { render, type SlimdownExtension } from './index.js';
+import {
+  PAGE_BREAK_HTML,
+  PAGE_BREAK_MARKER,
+  render,
+  type SlimdownExtension,
+} from './index.js';
 import test from 'ava';
 
 const removeWhitespaces = (txt: string) => txt.replace(/\s+/g, '');
@@ -1061,6 +1066,91 @@ $$`,
       '<p>Inline <span class="katex-inline">E = mc^2</span>.</p><div class="katex-block">\\sum_i x_i</div>',
     ),
   );
+});
+
+test('page breaks are opt-in and render between paragraphs', (t) => {
+  const disabled = render(`Before\n\n${PAGE_BREAK_MARKER}\n\nAfter`);
+  const enabled = render(`Before\n\n${PAGE_BREAK_MARKER}\n\nAfter`, {
+    pageBreaks: true,
+  });
+
+  t.false(disabled.includes(PAGE_BREAK_HTML));
+  t.is(
+    enabled,
+    `<p>\nBefore\n</p>\n\n${PAGE_BREAK_HTML}\n\n<p>\nAfter\n</p>`,
+  );
+});
+
+test('page breaks render at the document boundaries', (t) => {
+  t.is(
+    render(`${PAGE_BREAK_MARKER}\n\nAfter`, { pageBreaks: true }),
+    `${PAGE_BREAK_HTML}\n\n<p>\nAfter\n</p>`,
+  );
+  t.is(
+    render(`Before\n\n${PAGE_BREAK_MARKER}`, { pageBreaks: true }),
+    `<p>\nBefore\n</p>\n\n${PAGE_BREAK_HTML}`,
+  );
+});
+
+test('page breaks allow up to three leading spaces and trailing whitespace', (t) => {
+  for (let spaces = 0; spaces <= 3; spaces++) {
+    const markdown = `${' '.repeat(spaces)}${PAGE_BREAK_MARKER} \t`;
+    t.is(render(markdown, { pageBreaks: true }), PAGE_BREAK_HTML);
+  }
+
+  t.false(
+    render(`    ${PAGE_BREAK_MARKER}`, { pageBreaks: true }).includes(
+      PAGE_BREAK_HTML,
+    ),
+  );
+});
+
+test('page breaks are not recognized in ordinary text or inline', (t) => {
+  const html = render(
+    `Before ${PAGE_BREAK_MARKER}\n\n${PAGE_BREAK_MARKER} after`,
+    { pageBreaks: true },
+  );
+
+  t.false(html.includes(PAGE_BREAK_HTML));
+});
+
+test('page breaks are not recognized in fenced or inline code', (t) => {
+  const html = render(
+    `\`\`\`\n${PAGE_BREAK_MARKER}\n\`\`\`\n\n\`${PAGE_BREAK_MARKER}\``,
+    { pageBreaks: true },
+  );
+
+  t.false(html.includes(PAGE_BREAK_HTML));
+  t.true(html.includes(`&lt;!-- markdown:page-break --&gt;`));
+});
+
+test('page break extensions can override rendering or use the fallback', (t) => {
+  const custom: SlimdownExtension = {
+    renderPageBreak: () => '<hr class="custom-page-break">',
+  };
+  const fallback: SlimdownExtension = {
+    renderPageBreak: () => undefined,
+  };
+
+  t.is(
+    render(PAGE_BREAK_MARKER, { pageBreaks: true, extensions: [custom] }),
+    '<hr class="custom-page-break">',
+  );
+  t.is(
+    render(PAGE_BREAK_MARKER, { pageBreaks: true, extensions: [fallback] }),
+    PAGE_BREAK_HTML,
+  );
+});
+
+test('page break output is independent of paragraph removal', (t) => {
+  const withParagraphs = render(PAGE_BREAK_MARKER, { pageBreaks: true });
+  const withoutParagraphs = render(PAGE_BREAK_MARKER, {
+    pageBreaks: true,
+    removeParagraphs: true,
+  });
+
+  t.is(withParagraphs, PAGE_BREAK_HTML);
+  t.is(withoutParagraphs, PAGE_BREAK_HTML);
 });
 
 test('ordered list preserves non-one start number', (t) => {
