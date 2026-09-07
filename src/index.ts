@@ -1,5 +1,9 @@
 export type RegexReplacer = (substring: string, ...args: any[]) => string;
 
+export const PAGE_BREAK_MARKER = '<!-- markdown:page-break -->';
+export const PAGE_BREAK_HTML =
+  '<div class="md-page-break" data-markdown-page-break="true" role="doc-pagebreak" aria-label="Page break"></div>';
+
 export interface SlimdownRenderHookInput {
   /** Escape text for safe HTML text-node output. */
   escapeHtml: (value: string) => string;
@@ -24,6 +28,8 @@ export interface SlimdownExtension {
   renderMathBlock?: (input: SlimdownMathInput) => string | undefined;
   /** Render an inline math expression captured from $...$. */
   renderInlineMath?: (input: SlimdownMathInput) => string | undefined;
+  /** Render an enabled semantic page-break marker. */
+  renderPageBreak?: (input: SlimdownRenderHookInput) => string | undefined;
 }
 
 /**
@@ -87,7 +93,10 @@ const para = (_: string, line: string) => {
     : `\n<p>\n${trimmed}\n</p>\n`;
 };
 
-const processParagraphs = (markdown: string): string => {
+const processParagraphs = (
+  markdown: string,
+  pageBreakPlaceholder?: string,
+): string => {
   const blocks: string[] = [];
   let proseLines: string[] = [];
 
@@ -106,7 +115,8 @@ const processParagraphs = (markdown: string): string => {
       blocks.push(para('', trimmed));
     } else if (
       /^<\/?(ul|ol|li|h|p|bl|table|tbody|tr|td|th|caption)/i.test(trimmed) ||
-      /^{{MATHBLOCKPH\d+}}$/.test(trimmed)
+      /^{{MATHBLOCKPH\d+}}$/.test(trimmed) ||
+      trimmed === pageBreakPlaceholder
     ) {
       flushProse();
       blocks.push(`\n${line}\n`);
@@ -855,6 +865,21 @@ const restoreInlineMath = (
   });
 };
 
+const restorePageBreaks = (
+  markdown: string,
+  placeholder: string,
+  extensions: SlimdownExtension[],
+): string => {
+  return markdown.replaceAll(placeholder, () =>
+    renderWithExtension(
+      extensions,
+      'renderPageBreak',
+      { escapeHtml },
+      () => PAGE_BREAK_HTML,
+    ),
+  );
+};
+
 /** Pre-paragraph rules (everything except paragraph processing) */
 const preParaRules = [
   [/\r\n/g, '\n'], // Remove \r
@@ -903,7 +928,9 @@ export interface RenderOptions {
   alphaLists?: boolean;
   /** If true, add a slugified `id` attribute to each heading. Default: false. */
   headingIds?: boolean;
-  /** Optional render hooks for code blocks and math placeholders. */
+  /** If true, render standalone semantic page-break markers. Default: false. */
+  pageBreaks?: boolean;
+  /** Optional render hooks for code blocks, math, and page breaks. */
   extensions?: SlimdownExtension[];
 }
 
@@ -927,18 +954,21 @@ export function render(
   let externalLinks: boolean;
   let alphaLists: boolean;
   let headingIds: boolean;
+  let pageBreaks: boolean;
   let extensions: SlimdownExtension[];
   if (typeof optionsOrRemoveParagraphs === 'object') {
     removeParagraphs = optionsOrRemoveParagraphs.removeParagraphs ?? false;
     externalLinks = optionsOrRemoveParagraphs.externalLinks ?? false;
     alphaLists = optionsOrRemoveParagraphs.alphaLists ?? false;
     headingIds = optionsOrRemoveParagraphs.headingIds ?? false;
+    pageBreaks = optionsOrRemoveParagraphs.pageBreaks ?? false;
     extensions = optionsOrRemoveParagraphs.extensions ?? [];
   } else {
     removeParagraphs = optionsOrRemoveParagraphs;
     externalLinks = externalLinksArg;
     alphaLists = false;
     headingIds = false;
+    pageBreaks = false;
     extensions = [];
   }
   // Reset the storage arrays
@@ -955,6 +985,17 @@ export function render(
   markdown = extractMathBlocks(markdown);
   markdown = extractInlineCode(markdown);
   markdown = extractInlineMath(markdown);
+
+  let pageBreakPlaceholder = 'SLIMDOWNPAGEBREAKPH';
+  while (markdown.includes(pageBreakPlaceholder)) {
+    pageBreakPlaceholder += '_';
+  }
+  if (pageBreaks) {
+    markdown = markdown.replace(
+      /^ {0,3}<!-- markdown:page-break -->[ \t]*$/gm,
+      pageBreakPlaceholder,
+    );
+  }
 
   const outerCodeBlocks = codeBlocks.slice();
   const outerInlineCode = inlineCode.slice();
@@ -1048,7 +1089,10 @@ export function render(
   );
 
   // Apply paragraph processing after consecutive prose lines have formed logical blocks.
-  markdown = processParagraphs(markdown);
+  markdown = processParagraphs(
+    markdown,
+    pageBreaks ? pageBreakPlaceholder : undefined,
+  );
 
   // Apply post-paragraph cleanup rules
   postParaRules.forEach(([regex, subst, repeat = 1]) => {
@@ -1063,6 +1107,10 @@ export function render(
     new RegExp(`{{${blockquotePlaceholder}(\\d+)}}`, 'g'),
     (_match, index) => blockquotes[Number.parseInt(index, 10)],
   );
+
+  if (pageBreaks) {
+    markdown = restorePageBreaks(markdown, pageBreakPlaceholder, extensions);
+  }
 
   // Restore code blocks, math, and inline code with proper escaping
   markdown = restoreCodeBlocks(markdown, extensions);
