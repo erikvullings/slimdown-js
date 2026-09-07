@@ -776,7 +776,6 @@ const preParaRules = [
   [/<(https?:\/\/[^\s>]+)>/g, '<a href="$1">$1</a>'], // autolinks
   [/!\[([^\[]*)\]\((?:javascript:)?([^\)]+)\)/g, '<img src="$2" alt="$1">'], // images, invoked before links
   [/\[([^\[]+)\]\((?:javascript:)?([^\)]+)\)/g, '<a href="$2">$1</a>'], // links
-  [/([^\s]) {2,}\n/g, '$1<br>\n'], // hard line breaks (two+ trailing spaces after non-whitespace)
   [/([^\\])(\*\*|__)(.*?(_|\*)?)\2/g, '$1<strong>$3</strong>'], // bold
   [/([^\\])(\*|_)(.*?)\2/g, '$1<em>$3</em>'], // emphasis
   [/\\_/g, '&#95;'], // underscores part 1
@@ -871,6 +870,17 @@ export function render(
   markdown = extractInlineCode(markdown);
   markdown = extractInlineMath(markdown);
 
+  // Keep hard breaks within a paragraph while block-level rules process physical newlines.
+  let hardBreakPlaceholder = 'SLIMDOWNHARDBREAKPH';
+  while (markdown.includes(hardBreakPlaceholder)) {
+    hardBreakPlaceholder += '_';
+  }
+  markdown = markdown.replace(
+    /([^\s]) {2,}(\r?\n)/g,
+    (_match, precedingCharacter, newline) =>
+      precedingCharacter + hardBreakPlaceholder + newline,
+  );
+
   if (alphaLists) {
     markdown = processAlphaListItems(markdown);
   }
@@ -885,6 +895,11 @@ export function render(
   // Process collected list items into proper nested structure
   markdown = processListItems(markdown);
 
+  markdown = markdown.replace(
+    new RegExp(`${hardBreakPlaceholder}\\n(?=[^\\n])`, 'g'),
+    hardBreakPlaceholder,
+  );
+
   // Apply paragraph processing
   markdown = markdown.replace(/\n([^\n]+)\n/g, para);
 
@@ -894,6 +909,8 @@ export function render(
       markdown = markdown.replace(regex, subst as any);
     }
   });
+
+  markdown = markdown.split(hardBreakPlaceholder).join('<br>');
 
   // Restore code blocks, math, and inline code with proper escaping
   markdown = restoreCodeBlocks(markdown, extensions);
