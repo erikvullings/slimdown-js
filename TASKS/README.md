@@ -6,3 +6,6 @@
 ## Parser fixes
 - [x] 0002 Fix Markdown hard breaks
 - [x] 0003 Improve line continuations
+
+## Releases
+- [ ] 0004 Release 1.5.2
