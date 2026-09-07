@@ -28,7 +28,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "highlight.js": "^11.12.0",
+    "highlight.js": ">= 11.12.0",
     "slimdown-js": "^1.5.0"
   },
   "devDependencies": {
