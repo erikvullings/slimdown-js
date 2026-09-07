@@ -8,4 +8,4 @@
 - [x] 0003 Improve line continuations
 
 ## Releases
-- [ ] 0004 Release 1.5.2
+- [x] 0004 Release 1.5.2
