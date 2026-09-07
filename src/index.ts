@@ -65,6 +65,7 @@ const mathBlocks: string[] = [];
 const inlineMath: string[] = [];
 // Store footnotes
 const footnotes: Array<[id: string, text: string]> = [];
+let blockquoteRenderDepth = 0;
 
 const escapeMap: Record<string, string> = {
   '&': '&amp;',
@@ -277,9 +278,6 @@ const processListContinuations = (
 
   return lines.join('\n');
 };
-
-const blockquote = (_: string, __: string, item = '') =>
-  `\n<blockquote>${item.trim()}</blockquote>`;
 
 const taskList = (
   _text: string,
@@ -757,7 +755,7 @@ const extractCodeBlocks = (markdown: string): string => {
 
 // Function to extract and store inline code
 const extractInlineCode = (markdown: string): string => {
-  return markdown.replace(/`([^`]+)`/g, (_match, code) => {
+  return markdown.replace(/(?<!`)`([^`]+)`(?!`)/g, (_match, code) => {
     inlineCode.push(code);
     return `{{INLINECODEPH${inlineCode.length - 1}}}`;
   });
@@ -873,7 +871,6 @@ const preParaRules = [
   [/\n( *)[-*+] \[([xX ])\](.*)/g, taskList], // task lists with checkboxes (must come before regular ul lists)
   [/\n( *)(\*|-|\+)(.*)/g, ulList], // ul lists using +, - or * to denote an entry
   [/\n( *)([0-9]+[.)]) (.*)/g, olList], // ol lists
-  [/\n(&gt;|\>)(.*)/g, blockquote], // blockquotes
   [/(\^)(.*?)\1/g, '<sup>$2</sup>'], // superscript
   [/(\~)(.*?)\1/g, '<sub>$2</sub>'], // subscript
   [
@@ -949,13 +946,70 @@ export function render(
   inlineCode.length = 0;
   mathBlocks.length = 0;
   inlineMath.length = 0;
-  footnotes.length = 0;
+  if (blockquoteRenderDepth === 0) {
+    footnotes.length = 0;
+  }
 
-  // Extract code blocks, math, and inline code before processing
-  markdown = extractCodeBlocks(`\n${markdown}\n`);
+  markdown = `\n${markdown}\n`;
+  markdown = extractCodeBlocks(markdown);
   markdown = extractMathBlocks(markdown);
   markdown = extractInlineCode(markdown);
   markdown = extractInlineMath(markdown);
+
+  const outerCodeBlocks = codeBlocks.slice();
+  const outerInlineCode = inlineCode.slice();
+  const outerMathBlocks = mathBlocks.slice();
+  const outerInlineMath = inlineMath.slice();
+
+  let blockquotePlaceholder = 'SLIMDOWNBLOCKQUOTEPH';
+  while (markdown.includes(blockquotePlaceholder)) {
+    blockquotePlaceholder += '_';
+  }
+  const blockquotes: string[] = [];
+  markdown = markdown.replace(
+    /(^|\r?\n)((?:>[^\r\n]*(?:\r?\n|$))+)/g,
+    (_match, precedingNewline: string, quotedLines: string) => {
+      const body = quotedLines
+        .replace(/^> ?/gm, '')
+        .replace(/\r?\n$/, '');
+      const recursiveBody = body
+        .replace(/{{INLINECODEPH(\d+)}}/g, (placeholder, index) => {
+          const code = outerInlineCode[Number.parseInt(index, 10)];
+          return code === undefined ? placeholder : `\`${code}\``;
+        })
+        .replace(/{{INLINEMATHPH(\d+)}}/g, (placeholder, index) => {
+          const math = outerInlineMath[Number.parseInt(index, 10)];
+          return math === undefined ? placeholder : `$${math}$`;
+        });
+      const renderedBody = (() => {
+        blockquoteRenderDepth++;
+        try {
+          return render(recursiveBody, {
+            externalLinks,
+            alphaLists,
+            extensions,
+          });
+        } finally {
+          blockquoteRenderDepth--;
+        }
+      })();
+      blockquotes.push(
+        renderedBody.match(/<p>/g)?.length === 1
+          ? renderedBody.replace(/^<p>\s*([\s\S]*?)\s*<\/p>$/, '$1')
+          : renderedBody,
+      );
+      return `${precedingNewline}<blockquote>{{${blockquotePlaceholder}${
+        blockquotes.length - 1
+      }}}</blockquote>\n`;
+    },
+  );
+
+  // Recursive blockquote rendering uses the shared placeholder stores.
+  codeBlocks.splice(0, codeBlocks.length, ...outerCodeBlocks);
+  inlineCode.splice(0, inlineCode.length, ...outerInlineCode);
+  mathBlocks.splice(0, mathBlocks.length, ...outerMathBlocks);
+  inlineMath.splice(0, inlineMath.length, ...outerInlineMath);
+
   markdown = markdown.replace(/\r\n/g, '\n');
 
   // Keep hard breaks within a paragraph while block-level rules process physical newlines.
@@ -987,7 +1041,6 @@ export function render(
 
   // Process collected list items into proper nested structure
   markdown = processListItems(markdown);
-  markdown = markdown.replace(/<\/blockquote>\n<blockquote>/g, '<br>');
 
   markdown = markdown.replace(
     new RegExp(`${hardBreakPlaceholder}\\n(?=[^\\n])`, 'g'),
@@ -1006,6 +1059,11 @@ export function render(
 
   markdown = markdown.split(hardBreakPlaceholder).join('<br>');
 
+  markdown = markdown.replace(
+    new RegExp(`{{${blockquotePlaceholder}(\\d+)}}`, 'g'),
+    (_match, index) => blockquotes[Number.parseInt(index, 10)],
+  );
+
   // Restore code blocks, math, and inline code with proper escaping
   markdown = restoreCodeBlocks(markdown, extensions);
   markdown = restoreMathBlocks(markdown, extensions);
@@ -1013,7 +1071,9 @@ export function render(
   markdown = restoreInlineMath(markdown, extensions);
 
   // Add footnotes section if there are any footnotes
-  markdown = markdown.trim() + generateFootnotesSection();
+  markdown =
+    markdown.trim() +
+    (blockquoteRenderDepth === 0 ? generateFootnotesSection() : '');
 
   if (headingIds) {
     markdown = addHeadingIds(markdown);

@@ -278,7 +278,7 @@ One <strong>two</strong> three <em>four</em> five <strong>six</strong> seven <em
 More text with <code>inline($code);</code> sample.
 </p>
 
-<blockquote>A block quote<br>
+<blockquote>A block quote
 across two lines.</blockquote>
 
 <p>
@@ -1371,6 +1371,142 @@ test('blank lines keep blockquotes separate', (t) => {
   const html = render('> first quote\n\n> second quote');
   t.is(html.match(/<blockquote>/g)?.length, 2);
   t.false(html.includes('<br>'));
+});
+
+test('blockquotes preserve soft line breaks for LF and CRLF', (t) => {
+  for (const newline of ['\n', '\r\n']) {
+    const html = render(`> first${newline}> second`);
+    const quote = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/)?.[1];
+
+    t.is(html.match(/<blockquote>/g)?.length, 1);
+    t.regex(quote ?? '', /first\s+second/);
+    t.false(quote?.includes('<br>') ?? true);
+  }
+});
+
+test('blockquotes render exactly one hard break for LF and CRLF', (t) => {
+  for (const newline of ['\n', '\r\n']) {
+    const html = render(`> first  ${newline}> second`);
+    const quote = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/)?.[1] ?? '';
+
+    t.regex(quote, /first<br>\s*second/);
+    t.is(quote.match(/<br>/g)?.length, 1);
+  }
+});
+
+test('blockquotes render one hard break for three trailing spaces', (t) => {
+  const quote =
+    render('> first   \n> second').match(
+      /<blockquote>([\s\S]*?)<\/blockquote>/,
+    )?.[1] ?? '';
+
+  t.is(quote.match(/<br>/g)?.length, 1);
+});
+
+test('blockquotes support multiple and mixed line breaks', (t) => {
+  const hardQuote =
+    render('> first  \n> second  \n> third').match(
+      /<blockquote>([\s\S]*?)<\/blockquote>/,
+    )?.[1] ?? '';
+  const mixedQuote =
+    render('> first\n> second  \n> third').match(
+      /<blockquote>([\s\S]*?)<\/blockquote>/,
+    )?.[1] ?? '';
+
+  t.is(hardQuote.match(/<br>/g)?.length, 2);
+  t.regex(hardQuote, /first<br>\s*second<br>\s*third/);
+  t.is(mixedQuote.match(/<br>/g)?.length, 1);
+});
+
+test('blockquotes terminate before following prose', (t) => {
+  const html = render('> quoted\n\noutside');
+  const quote = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/)?.[1] ?? '';
+
+  t.true(quote.includes('quoted'));
+  t.false(quote.includes('outside'));
+  t.regex(html, /<\/blockquote>\s*<p>\s*outside\s*<\/p>/);
+});
+
+test('blockquotes retain nested blockquotes', (t) => {
+  const html = render('> outer\n>> inner');
+
+  t.regex(
+    html,
+    /<blockquote>[\s\S]*outer[\s\S]*<blockquote>[\s\S]*inner[\s\S]*<\/blockquote>[\s\S]*<\/blockquote>/,
+  );
+  t.is(html.match(/<blockquote>/g)?.length, 2);
+});
+
+test('blockquotes retain lists', (t) => {
+  const html = render('> - first\n> - second');
+  const quote = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/)?.[1] ?? '';
+
+  t.true(quote.includes('<ul>'));
+  t.is(quote.match(/<li>/g)?.length, 2);
+});
+
+test('blockquotes retain blank-line paragraph boundaries', (t) => {
+  const html = render('> first\n>\n> second');
+  const quote = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/)?.[1] ?? '';
+
+  t.is(quote.match(/<p>/g)?.length, 2);
+});
+
+test('blockquotes preserve fenced code line breaks', (t) => {
+  const html = render('> ```text\n> first  \n> second\n> ```');
+  const code = html.match(/<code[^>]*>([\s\S]*?)<\/code>/)?.[1] ?? '';
+
+  t.is(code, 'first  \nsecond');
+  t.false(code.includes('<br>'));
+});
+
+test('blockquote parsing leaves quoted markers in code and math untouched', (t) => {
+  const codeHtml = render('```text\n> literal\n```');
+  const mathHtml = render('$$\n> x\n$$');
+
+  t.true(codeHtml.includes('<code class="language-text">&gt; literal</code>'));
+  t.false(codeHtml.includes('<blockquote>'));
+  t.true(mathHtml.includes('&gt; x'));
+  t.false(mathHtml.includes('<blockquote>'));
+});
+
+test('blockquotes retain inline code and math', (t) => {
+  const html = render('before\n\n> `inside` and $x$\n\nafter');
+  const quote = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/)?.[1] ?? '';
+
+  t.true(quote.includes('<code>inside</code>'));
+  t.true(quote.includes('<span class="math-inline">x</span>'));
+  t.regex(html, /<p>\s*before\s*<\/p>/);
+  t.regex(html, /<p>\s*after\s*<\/p>/);
+});
+
+test('blockquote placeholders remain literal in protected content', (t) => {
+  const html = render(
+    '```text\n{{SLIMDOWNBLOCKQUOTEPH0}}\n```\n\n> quote',
+  );
+  const code = html.match(/<code[^>]*>([\s\S]*?)<\/code>/)?.[1] ?? '';
+
+  t.is(code, '{{SLIMDOWNBLOCKQUOTEPH0}}');
+  t.is(html.match(/<blockquote>/g)?.length, 1);
+  t.true(html.includes('<blockquote>quote</blockquote>'));
+});
+
+test('blockquotes share the document footnote section', (t) => {
+  const html = render(
+    '> quoted[^quote]\n>\n> [^quote]: Quoted note.\n\noutside[^outside]\n\n[^outside]: Outside note.',
+  );
+
+  t.is(html.match(/<div class="footnotes">/g)?.length, 1);
+  t.regex(html, /<\/blockquote>[\s\S]*<div class="footnotes">/);
+  t.true(html.includes('<li id="fn:quote">'));
+  t.true(html.includes('<li id="fn:outside">'));
+});
+
+test('heading IDs remain unique across blockquotes', (t) => {
+  const html = render('# Same\n\n> # Same', { headingIds: true });
+
+  t.true(html.includes('<h1 id="same">Same</h1>'));
+  t.true(html.includes('<h1 id="same-2">Same</h1>'));
 });
 
 test('definition lists remain outside preceding paragraphs', (t) => {
